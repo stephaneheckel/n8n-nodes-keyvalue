@@ -29,7 +29,7 @@
     "strict": false
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@n8n/node-cli": "*",
     "@types/node": "^26.0.0",
     "eslint": "9.39.4",
