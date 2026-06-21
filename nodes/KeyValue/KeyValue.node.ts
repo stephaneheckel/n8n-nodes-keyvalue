@@ -64,7 +64,21 @@ export class KeyValue implements INodeType {
 				default: 'create',
 				noDataExpression: true,
 			},
-			// Directory: directoryName field
+			// Directory: directory filter (list only)
+			{
+				displayName: 'Directory Filter',
+				name: 'directoryFilter',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['directory'],
+						operation: ['list'],
+					},
+				},
+				default: '',
+				placeholder: 'prod_*',
+				description: 'Glob pattern to filter directories by name. Use * for any characters, ? for one character. Leave empty to match all.',
+			},
 			{
 				displayName: 'Directory Name',
 				name: 'directoryName',
@@ -188,11 +202,15 @@ export class KeyValue implements INodeType {
 						if (!fs.existsSync(BASE_DIR)) {
 							continue;
 						}
+						const directoryFilter = this.getNodeParameter('directoryFilter', i, '') as string;
+						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
+
 						const entries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
 						const directories = entries
 							.filter((e: fs.Dirent) => e.isDirectory())
 							.map((e: fs.Dirent) => e.name);
 						for (const dir of directories) {
+							if (dirRegex && !dirRegex.test(dir)) continue;
 							returnData.push({ json: { directory: dir }, pairedItem: { item: i } });
 						}
 					} else {
