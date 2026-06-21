@@ -45,16 +45,22 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 
 | Operation | Fields | Description | Output |
 |-----------|--------|-------------|--------|
-| **Read** | Directory Name, Key | Reads a record's value | `{ "directory": "name", "key": "k", "value": "..." }` |
-| **Write** | Directory Name, Key, Value | Creates/overwrites a record | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
+| **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
 | **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
+| **Read** | Directory Name, Key | Reads a record's value | `{ "directory": "name", "key": "k", "value": "..." }` |
+| **Write** | Directory Name, Key, Value | Creates/overwrites a record | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
 
 ### List Filters
 
-- **Key Filter** — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
-- **Value Filter** — substring match inside file content. Example: `active` returns only records containing "active".
-- Both filters combined use AND logic. Both empty returns all records.
+- **Directory Filter** (Directory → List) — glob pattern on directory names. `*` matches any characters, `?` matches one. Example: `prod_*` matches `prod_eu`, `prod_us`.
+- **Key Filter** (Record → List) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
+- **Value Filter** (Record → List) — substring match inside file content. Example: `active` returns only records containing "active".
+- All filters combined use AND logic. Empty = match all.
+
+### Append Separator
+
+The **Separator** field on Record → Append defaults to a newline. You can type `\n` for a newline, use `,` for CSV-style, or leave empty for direct concatenation.
 
 ## Examples
 
