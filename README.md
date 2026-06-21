@@ -122,6 +122,10 @@ All directories and records will now be stored under `/home/node/.n8n/keyvalue/`
 > N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n
 > ```
 
+## Limitations
+
+- **No input validation:** Directory names and record keys are passed directly to the filesystem. Invalid characters (`/`, `<`, `>`, `:`, `"`, `\`, `|`, `?`, `*`) will cause OS-level errors. Stick to alphanumeric names, hyphens, and underscores for now.
+
 ## Development
 
 ```bash
