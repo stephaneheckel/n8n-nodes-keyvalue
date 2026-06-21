@@ -103,6 +103,7 @@ export class KeyValue implements INodeType {
 					show: { resource: ['record'] },
 				},
 				options: [
+					{ name: 'Append', value: 'append', description: 'Append a value to an existing record', action: 'Append to a record' },
 					{ name: 'Delete', value: 'delete', description: 'Delete a record by key', action: 'Delete a record' },
 					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
@@ -133,7 +134,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['read', 'write', 'delete'],
+						operation: ['read', 'write', 'delete', 'append'],
 					},
 				},
 				default: '',
@@ -148,12 +149,27 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['write'],
+						operation: ['write', 'append'],
 					},
 				},
 				default: '',
 				placeholder: 'record value',
 				description: 'The value to store (plain text)',
+			},
+			// Record: separator field (append only)
+			{
+				displayName: 'Separator',
+				name: 'separator',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['record'],
+						operation: ['append'],
+					},
+				},
+				default: '\\n',
+				placeholder: '\\n',
+				description: 'Separator inserted before the appended value. Default is a newline. Leave empty for direct concatenation.',
 			},
 			// Record: key filter (list only)
 			{
@@ -265,7 +281,20 @@ export class KeyValue implements INodeType {
 						const key = this.getNodeParameter('key', i) as string;
 						const recordPath = path.join(dirPath, key);
 
-						if (operation === 'read') {
+						if (operation === 'append') {
+							const value = String(this.getNodeParameter('value', i));
+							const separator = this.getNodeParameter('separator', i, '\\n') as string;
+							if (!fs.existsSync(dirPath)) {
+								fs.mkdirSync(dirPath, { recursive: true });
+							}
+							if (fs.existsSync(recordPath)) {
+								const existing = fs.readFileSync(recordPath, 'utf-8');
+								fs.writeFileSync(recordPath, existing + separator + value, 'utf-8');
+							} else {
+								fs.writeFileSync(recordPath, value, 'utf-8');
+							}
+							returnData.push({ json: { directory: directoryName, key, value, appended: true }, pairedItem: { item: i } });
+						} else if (operation === 'read') {
 							if (!fs.existsSync(recordPath)) {
 								throw new NodeApiError(this.getNode(), {
 									message: `Record "${key}" does not exist in directory "${directoryName}"`,
