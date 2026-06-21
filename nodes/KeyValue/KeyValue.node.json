@@ -1,0 +1,14 @@
+{
+	"node": "n8n-nodes-keyvalue",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Data & Storage"],
+	"resources": {
+		"credentialDocumentation": [],
+		"primaryDocumentation": [
+			{
+				"url": ""
+			}
+		]
+	}
+}
