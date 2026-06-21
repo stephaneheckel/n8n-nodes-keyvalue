@@ -93,6 +93,12 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 |----------|---------|-------------|
 | `N8N_KEYVALUE_DIR` | `~/.n8n-keyvalue` | Override the base directory. Useful for Docker / persistent volume mounts. Example: `N8N_KEYVALUE_DIR=/data/keyvalue` |
 
+> **Security note:** If your n8n instance has `N8N_RESTRICT_FILE_ACCESS_TO` set, you must include the KeyValue base directory in its semicolon-separated list. Otherwise n8n will block all file operations. Example:
+> ```
+> N8N_KEYVALUE_DIR=/data/keyvalue
+> N8N_RESTRICT_FILE_ACCESS_TO=/data;/tmp
+> ```
+
 ## Development
 
 ```bash
