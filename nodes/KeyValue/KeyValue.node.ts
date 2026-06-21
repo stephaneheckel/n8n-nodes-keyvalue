@@ -40,77 +40,77 @@ export class KeyValue implements INodeType {
 				name: 'resource',
 				type: 'options',
 				options: [
-					{ name: 'Database', value: 'database' },
-					{ name: 'Table', value: 'table' },
+					{ name: 'Directory', value: 'directory' },
+					{ name: 'Record', value: 'record' },
 				],
-				default: 'database',
+				default: 'directory',
 				noDataExpression: true,
 				required: true,
-				description: 'Operate on databases (directories) or tables (files within a directory)',
+				description: 'Operate on directories or records (files within a directory)',
 			},
-			// Database operations
+			// Directory operations
 			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				displayOptions: {
-					show: { resource: ['database'] },
+					show: { resource: ['directory'] },
 				},
 				options: [
-					{ name: 'Create', value: 'create', description: 'Create a new database (directory)', action: 'Create a database' },
-					{ name: 'Delete', value: 'delete', description: 'Delete a database (directory)', action: 'Delete a database' },
-					{ name: 'List', value: 'list', description: 'List all databases', action: 'List databases' },
+					{ name: 'Create', value: 'create', description: 'Create a new directory', action: 'Create a directory' },
+					{ name: 'Delete', value: 'delete', description: 'Delete a directory', action: 'Delete a directory' },
+					{ name: 'List', value: 'list', description: 'List all directories', action: 'List directories' },
 				],
 				default: 'create',
 				noDataExpression: true,
 			},
-			// Database: databaseName field
+			// Directory: directoryName field
 			{
-				displayName: 'Database Name',
-				name: 'databaseName',
+				displayName: 'Directory Name',
+				name: 'directoryName',
 				type: 'string',
 				required: true,
 				displayOptions: {
 					show: {
-						resource: ['database'],
+						resource: ['directory'],
 						operation: ['create', 'delete'],
 					},
 				},
 				default: '',
-				placeholder: 'my_database',
-				description: 'Name of the database (subdirectory under ~/.n8n-keyvalue)',
+				placeholder: 'my_directory',
+				description: 'Name of the directory (subdirectory under ~/.n8n-keyvalue)',
 			},
-			// Table operations (alphabetically sorted)
+			// Record operations (alphabetically sorted)
 			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				displayOptions: {
-					show: { resource: ['table'] },
+					show: { resource: ['record'] },
 				},
 				options: [
 					{ name: 'Delete', value: 'delete', description: 'Delete a record by key', action: 'Delete a record' },
-					{ name: 'List', value: 'list', description: 'List all records in a table', action: 'List records' },
+					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
 					{ name: 'Write', value: 'write', description: 'Write (create or overwrite) a record', action: 'Write a record' },
 				],
 				default: 'read',
 				noDataExpression: true,
 			},
-			// Table: tableName field
+			// Record: directoryName field
 			{
-				displayName: 'Table Name',
-				name: 'tableName',
+				displayName: 'Directory Name',
+				name: 'directoryName',
 				type: 'string',
 				required: true,
 				displayOptions: {
-					show: { resource: ['table'] },
+					show: { resource: ['record'] },
 				},
 				default: '',
-				placeholder: 'my_table',
-				description: 'Name of the table (subdirectory) to operate on',
+				placeholder: 'my_directory',
+				description: 'Name of the directory to operate on',
 			},
-			// Table: key field
+			// Record: key field
 			{
 				displayName: 'Key',
 				name: 'key',
@@ -118,7 +118,7 @@ export class KeyValue implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						resource: ['table'],
+						resource: ['record'],
 						operation: ['read', 'write', 'delete'],
 					},
 				},
@@ -126,14 +126,14 @@ export class KeyValue implements INodeType {
 				placeholder: 'record_key',
 				description: 'The record key (filename)',
 			},
-			// Table: value field
+			// Record: value field
 			{
 				displayName: 'Value',
 				name: 'value',
 				type: 'string',
 				displayOptions: {
 					show: {
-						resource: ['table'],
+						resource: ['record'],
 						operation: ['write'],
 					},
 				},
@@ -141,14 +141,14 @@ export class KeyValue implements INodeType {
 				placeholder: 'record value',
 				description: 'The value to store (plain text)',
 			},
-			// Table: key filter (list only)
+			// Record: key filter (list only)
 			{
 				displayName: 'Key Filter',
 				name: 'keyFilter',
 				type: 'string',
 				displayOptions: {
 					show: {
-						resource: ['table'],
+						resource: ['record'],
 						operation: ['list'],
 					},
 				},
@@ -156,14 +156,14 @@ export class KeyValue implements INodeType {
 				placeholder: 'user_*',
 				description: 'Glob pattern to filter records by key (filename). Use * for any characters, ? for one character. Leave empty to match all',
 			},
-			// Table: value filter (list only)
+			// Record: value filter (list only)
 			{
 				displayName: 'Value Filter',
 				name: 'valueFilter',
 				type: 'string',
 				displayOptions: {
 					show: {
-						resource: ['table'],
+						resource: ['record'],
 						operation: ['list'],
 					},
 				},
@@ -182,94 +182,94 @@ export class KeyValue implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				if (resource === 'database') {
-					// --- Database operations ---
+				if (resource === 'directory') {
+					// --- Directory operations ---
 					if (operation === 'list') {
 						if (!fs.existsSync(BASE_DIR)) {
 							continue;
 						}
 						const entries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
-						const databases = entries
+						const directories = entries
 							.filter((e: fs.Dirent) => e.isDirectory())
 							.map((e: fs.Dirent) => e.name);
-						for (const db of databases) {
-							returnData.push({ json: { database: db }, pairedItem: { item: i } });
+						for (const dir of directories) {
+							returnData.push({ json: { directory: dir }, pairedItem: { item: i } });
 						}
 					} else {
-						const databaseName = this.getNodeParameter('databaseName', i) as string;
-						const dbPath = path.join(BASE_DIR, databaseName);
+						const directoryName = this.getNodeParameter('directoryName', i) as string;
+						const dirPath = path.join(BASE_DIR, directoryName);
 
 						if (operation === 'create') {
-							if (fs.existsSync(dbPath)) {
+							if (fs.existsSync(dirPath)) {
 								throw new NodeApiError(this.getNode(), {
-									message: `Database "${databaseName}" already exists`,
+									message: `Directory "${directoryName}" already exists`,
 								} as JsonObject, { itemIndex: i });
 							}
-							fs.mkdirSync(dbPath, { recursive: true });
-							returnData.push({ json: { database: databaseName, created: true }, pairedItem: { item: i } });
+							fs.mkdirSync(dirPath, { recursive: true });
+							returnData.push({ json: { directory: directoryName, created: true }, pairedItem: { item: i } });
 						} else if (operation === 'delete') {
-							if (!fs.existsSync(dbPath)) {
+							if (!fs.existsSync(dirPath)) {
 								throw new NodeApiError(this.getNode(), {
-									message: `Database "${databaseName}" does not exist`,
+									message: `Directory "${directoryName}" does not exist`,
 								} as JsonObject, { itemIndex: i });
 							}
-							fs.rmSync(dbPath, { recursive: true, force: true });
-							returnData.push({ json: { database: databaseName, deleted: true }, pairedItem: { item: i } });
+							fs.rmSync(dirPath, { recursive: true, force: true });
+							returnData.push({ json: { directory: directoryName, deleted: true }, pairedItem: { item: i } });
 						}
 					}
-				} else if (resource === 'table') {
-					// --- Table operations ---
-					const tableName = this.getNodeParameter('tableName', i) as string;
-					const tablePath = path.join(BASE_DIR, tableName);
+				} else if (resource === 'record') {
+					// --- Record operations ---
+					const directoryName = this.getNodeParameter('directoryName', i) as string;
+					const dirPath = path.join(BASE_DIR, directoryName);
 
 					if (operation === 'list') {
-						if (!fs.existsSync(tablePath)) {
+						if (!fs.existsSync(dirPath)) {
 							throw new NodeApiError(this.getNode(), {
-								message: `Table "${tableName}" does not exist`,
+								message: `Directory "${directoryName}" does not exist`,
 							} as JsonObject, { itemIndex: i });
 						}
 						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
 						const valueFilter = this.getNodeParameter('valueFilter', i, '') as string;
 						const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
 
-						const entries = fs.readdirSync(tablePath, { withFileTypes: true });
+						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 						for (const entry of entries) {
 							if (!entry.isFile()) continue;
 							// Apply key filter
 							if (keyRegex && !keyRegex.test(entry.name)) continue;
-							const recPath = path.join(tablePath, entry.name);
+							const recPath = path.join(dirPath, entry.name);
 							const content = fs.readFileSync(recPath, 'utf-8');
 							// Apply value filter
 							if (valueFilter && !content.includes(valueFilter)) continue;
-							returnData.push({ json: { table: tableName, key: entry.name, value: content }, pairedItem: { item: i } });
+							returnData.push({ json: { directory: directoryName, key: entry.name, value: content }, pairedItem: { item: i } });
 						}
 					} else {
 						const key = this.getNodeParameter('key', i) as string;
-						const recordPath = path.join(tablePath, key);
+						const recordPath = path.join(dirPath, key);
 
 						if (operation === 'read') {
 							if (!fs.existsSync(recordPath)) {
 								throw new NodeApiError(this.getNode(), {
-									message: `Record "${key}" does not exist in table "${tableName}"`,
+									message: `Record "${key}" does not exist in directory "${directoryName}"`,
 								} as JsonObject, { itemIndex: i });
 							}
 							const content = fs.readFileSync(recordPath, 'utf-8');
-							returnData.push({ json: { table: tableName, key, value: content }, pairedItem: { item: i } });
+							returnData.push({ json: { directory: directoryName, key, value: content }, pairedItem: { item: i } });
 						} else if (operation === 'write') {
 							const value = String(this.getNodeParameter('value', i));
-							if (!fs.existsSync(tablePath)) {
-								fs.mkdirSync(tablePath, { recursive: true });
+							if (!fs.existsSync(dirPath)) {
+								fs.mkdirSync(dirPath, { recursive: true });
 							}
 							fs.writeFileSync(recordPath, value, 'utf-8');
-							returnData.push({ json: { table: tableName, key, value, written: true }, pairedItem: { item: i } });
+							returnData.push({ json: { directory: directoryName, key, value, written: true }, pairedItem: { item: i } });
 						} else if (operation === 'delete') {
 							if (!fs.existsSync(recordPath)) {
 								throw new NodeApiError(this.getNode(), {
-									message: `Record "${key}" does not exist in table "${tableName}"`,
+									message: `Record "${key}" does not exist in directory "${directoryName}"`,
 								} as JsonObject, { itemIndex: i });
 							}
 							fs.unlinkSync(recordPath);
-							returnData.push({ json: { table: tableName, key, deleted: true }, pairedItem: { item: i } });
+							returnData.push({ json: { directory: directoryName, key, deleted: true }, pairedItem: { item: i } });
 						}
 					}
 				}

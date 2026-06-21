@@ -3,8 +3,8 @@
 A filesystem-based key-value store node for [n8n](https://n8n.io). Store, retrieve, list, and delete key-value pairs using plain directories and text files.
 
 ```
-~/.n8n-keyvalue/          ← your database root
-├── customers/            ← a table (subdirectory)
+~/.n8n-keyvalue/          ← your store root
+├── customers/            ← a directory
 │   ├── alice             ← a record (text file)
 │   └── bob
 └── orders/
@@ -27,28 +27,28 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 ## Quick Start
 
 1. Add a **KeyValue** node to your workflow.
-2. Select **Database → Create**, enter `my_db`.
-3. Add another KeyValue node, select **Table → Write**, enter table `my_db`, key `greeting`, value `Hello n8n!`.
-4. Add a third node, **Table → Read**, same table and key — outputs `Hello n8n!`.
+2. Select **Directory → Create**, enter `my_dir`.
+3. Add another KeyValue node, select **Record → Write**, enter directory `my_dir`, key `greeting`, value `Hello n8n!`.
+4. Add a third node, **Record → Read**, same directory and key — outputs `Hello n8n!`.
 
 ## Operations Reference
 
-### Database Resource
+### Directory Resource
 
 | Operation | Field | Description | Output |
 |-----------|-------|-------------|--------|
-| **Create** | Database Name (required) | Creates a new table (subdirectory) | `{ "database": "name", "created": true }` |
-| **Delete** | Database Name (required) | Deletes a table and all its records | `{ "database": "name", "deleted": true }` |
-| **List** | — | Lists all tables | `[{ "database": "name1" }, { "database": "name2" }]` |
+| **Create** | Directory Name (required) | Creates a new directory | `{ "directory": "name", "created": true }` |
+| **Delete** | Directory Name (required) | Deletes a directory and all its records | `{ "directory": "name", "deleted": true }` |
+| **List** | — | Lists all directories | `[{ "directory": "name1" }, { "directory": "name2" }]` |
 
-### Table Resource
+### Record Resource
 
 | Operation | Fields | Description | Output |
 |-----------|--------|-------------|--------|
-| **Read** | Table Name, Key | Reads a record's value | `{ "table": "name", "key": "k", "value": "..." }` |
-| **Write** | Table Name, Key, Value | Creates/overwrites a record | `{ "table": "name", "key": "k", "value": "...", "written": true }` |
-| **Delete** | Table Name, Key | Deletes a record | `{ "table": "name", "key": "k", "deleted": true }` |
-| **List** | Table Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "table": "name", "key": "k", "value": "..." }]` |
+| **Read** | Directory Name, Key | Reads a record's value | `{ "directory": "name", "key": "k", "value": "..." }` |
+| **Write** | Directory Name, Key, Value | Creates/overwrites a record | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
+| **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
+| **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 
 ### List Filters
 
@@ -58,24 +58,24 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 
 ## Examples
 
-### Create a database and write a record
+### Create a directory and write a record
 
 ```
-KeyValue (Database → Create, db: "config")
-  → KeyValue (Table → Write, table: "config", key: "api_url", value: "https://api.example.com")
+KeyValue (Directory → Create, name: "config")
+  → KeyValue (Record → Write, directory: "config", key: "api_url", value: "https://api.example.com")
 ```
 
-### List all databases, then delete one
+### List all directories, then delete one
 
 ```
-KeyValue (Database → List)
-  → KeyValue (Database → Delete, database: "old_db")
+KeyValue (Directory → List)
+  → KeyValue (Directory → Delete, name: "old_dir")
 ```
 
 ### Filter records by pattern
 
 ```
-KeyValue (Table → List, table: "users", Key Filter: "admin_*")
+KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
   → returns only keys starting with "admin_"
 ```
 
@@ -83,7 +83,7 @@ KeyValue (Table → List, table: "users", Key Filter: "admin_*")
 
 | n8n concept | Filesystem |
 |-------------|------------|
-| Database (table) | Subdirectory under `~/.n8n-keyvalue/` |
+| Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
 | Value | Plain UTF-8 text stored in the file |
 
