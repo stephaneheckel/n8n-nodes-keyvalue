@@ -10,7 +10,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 
-const BASE_DIR = path.join(os.homedir(), '.n8n-keyvalue');
+const BASE_DIR = process.env.N8N_KEYVALUE_DIR || path.join(os.homedir(), '.n8n-keyvalue');
 
 function globToRegex(pattern: string): RegExp {
 	const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');

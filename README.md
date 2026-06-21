@@ -89,7 +89,9 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 
 ## Environment Variables
 
-*(Planned)* — `N8N_KEYVALUE_DIR` to override the default base directory for Docker/persistent volume setups.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `N8N_KEYVALUE_DIR` | `~/.n8n-keyvalue` | Override the base directory. Useful for Docker / persistent volume mounts. Example: `N8N_KEYVALUE_DIR=/data/keyvalue` |
 
 ## Development
 
