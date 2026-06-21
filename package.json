@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-keyvalue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n node for storing key-value pairs on the filesystem",
   "license": "MIT",
   "homepage": "https://github.com/stephaneheckel/n8n-nodes-keyvalue#readme",
@@ -10,8 +10,14 @@
     "key-value",
     "filesystem"
   ],
-  "author": { "name": "Stephane Heckel", "email": "stephane.heckel@gmail.com" },
-  "repository": { "type": "git", "url": "https://github.com/stephaneheckel/n8n-nodes-keyvalue.git" },
+  "author": {
+    "name": "Stephane Heckel",
+    "email": "stephane.heckel@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stephaneheckel/n8n-nodes-keyvalue.git"
+  },
   "scripts": {
     "build": "n8n-node build",
     "build:watch": "tsc --watch",
@@ -21,11 +27,15 @@
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "index.js",
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "nodes": ["dist/nodes/KeyValue/KeyValue.node.js"],
+    "nodes": [
+      "dist/nodes/KeyValue/KeyValue.node.js"
+    ],
     "strict": false
   },
   "devDependencies": {
@@ -38,5 +48,7 @@
     "release-it": "20.2.0",
     "typescript": "5.9.3"
   },
-  "peerDependencies": { "n8n-workflow": "*" }
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
 }
