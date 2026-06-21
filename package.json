@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-keyvalue",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "n8n node for storing key-value pairs on the filesystem",
   "license": "MIT",
   "homepage": "https://github.com/stephaneheckel/n8n-nodes-keyvalue#readme",
@@ -30,7 +30,6 @@
   "files": [
     "dist"
   ],
-  "main": "index.js",
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [

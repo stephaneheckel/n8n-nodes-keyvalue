@@ -97,12 +97,29 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `N8N_KEYVALUE_DIR` | `~/.n8n-keyvalue` | Override the base directory. Useful for Docker / persistent volume mounts. Example: `N8N_KEYVALUE_DIR=/data/keyvalue` |
+| `N8N_KEYVALUE_DIR` | `~/.n8n-keyvalue` | Override the base directory. Useful for Docker / persistent volume mounts. |
 
-> **Security note:** If your n8n instance has `N8N_RESTRICT_FILE_ACCESS_TO` set, you must include the KeyValue base directory in its semicolon-separated list. Otherwise n8n will block all file operations. Example:
+### Setting up a persistent directory (Docker)
+
+If your n8n container has a persistent volume at `/home/node/.n8n`, set up KeyValue inside it:
+
+```bash
+# Inside the container (or add to your Dockerfile/entrypoint)
+mkdir -p /home/node/.n8n/keyvalue
+```
+
+Then set the environment variable on your n8n container:
+
+```
+N8N_KEYVALUE_DIR=/home/node/.n8n/keyvalue
+```
+
+All directories and records will now be stored under `/home/node/.n8n/keyvalue/` and survive container restarts.
+
+> **Security note:** If your n8n instance has `N8N_RESTRICT_FILE_ACCESS_TO` set, include the KeyValue directory in its semicolon-separated list:
 > ```
-> N8N_KEYVALUE_DIR=/data/keyvalue
-> N8N_RESTRICT_FILE_ACCESS_TO=/data;/tmp
+> N8N_KEYVALUE_DIR=/home/node/.n8n/keyvalue
+> N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n
 > ```
 
 ## Development
