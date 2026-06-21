@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "n8n node for storing key-value pairs on the filesystem",
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://github.com/stephaneheckel/n8n-nodes-keyvalue#readme",
   "keywords": [
     "n8n-community-node-package",
     "n8n-node",
@@ -11,7 +11,7 @@
     "filesystem"
   ],
   "author": { "name": "Stephane Heckel", "email": "stephane.heckel@gmail.com" },
-  "repository": { "type": "git", "url": "" },
+  "repository": { "type": "git", "url": "https://github.com/stephaneheckel/n8n-nodes-keyvalue.git" },
   "scripts": {
     "build": "n8n-node build",
     "build:watch": "tsc --watch",
