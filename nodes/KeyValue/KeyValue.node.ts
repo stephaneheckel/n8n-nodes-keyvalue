@@ -167,9 +167,9 @@ export class KeyValue implements INodeType {
 						operation: ['append'],
 					},
 				},
-				default: '\\n',
+				default: '\n',
 				placeholder: '\\n',
-				description: 'Separator inserted before the appended value. Default is a newline. Leave empty for direct concatenation.',
+				description: 'Separator inserted before the appended value. Defaults to a newline. You can type \\n for a newline. Leave empty for direct concatenation.',
 			},
 			// Record: key filter (list only)
 			{
@@ -283,7 +283,9 @@ export class KeyValue implements INodeType {
 
 						if (operation === 'append') {
 							const value = String(this.getNodeParameter('value', i));
-							const separator = this.getNodeParameter('separator', i, '\\n') as string;
+							let separator = this.getNodeParameter('separator', i, '\n') as string;
+							// Normalize: if user typed literal \n, convert to real newline
+							separator = separator.replace(/\\n/g, '\n');
 							if (!fs.existsSync(dirPath)) {
 								fs.mkdirSync(dirPath, { recursive: true });
 							}
