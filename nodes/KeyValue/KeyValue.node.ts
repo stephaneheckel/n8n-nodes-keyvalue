@@ -420,12 +420,14 @@ export class KeyValue implements INodeType {
 							fs.writeFileSync(counterPath, String(newValue), 'utf-8');
 							returnData.push({ json: { counter: counterName, value: newValue }, pairedItem: { item: i } });
 						} else if (operation === 'reset') {
-							const resetTo = this.getNodeParameter('resetTo', i, 0) as number;
-							if (!fs.existsSync(countersDir)) {
-								fs.mkdirSync(countersDir, { recursive: true });
-							}
-							fs.writeFileSync(counterPath, String(resetTo), 'utf-8');
-							returnData.push({ json: { counter: counterName, value: resetTo }, pairedItem: { item: i } });
+									const resetTo = this.getNodeParameter('resetTo', i, 0) as number;
+									if (!fs.existsSync(counterPath)) {
+										throw new NodeApiError(this.getNode(), {
+											message: `Counter "${counterName}" does not exist`,
+										} as JsonObject, { itemIndex: i });
+									}
+									fs.writeFileSync(counterPath, String(resetTo), 'utf-8');
+									returnData.push({ json: { counter: counterName, value: resetTo }, pairedItem: { item: i } });
 						}
 					}
 				} catch (error) {

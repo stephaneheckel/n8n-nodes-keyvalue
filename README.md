@@ -39,13 +39,13 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 |-----------|--------|-------------|--------|
 | **Get** | Counter Name (required) | Reads the current counter value | `{ "counter": "name", "value": 42 }` |
 | **Increment** | Counter Name, Increment By, Start At | Increments a counter and returns the new value. Creates it at `startAt` on first call | `{ "counter": "name", "value": 43 }` |
-| **Reset** | Counter Name, Reset To | Resets a counter to a target value. Creates it if it doesn't exist | `{ "counter": "name", "value": 0 }` |
+| **Reset** | Counter Name, Reset To | Resets a counter to a target value | `{ "counter": "name", "value": 0 }` |
 
 - **Increment By** (default `1`) — amount to add each call.
 - **Start At** (default `0`) — value to create the counter at if it doesn't exist yet. Ignored once the counter exists.
 - **Reset To** (default `0`) — value to set the counter to on reset.
 - Counters are stored as plain text files under `counters/` in the base directory.
-- **Get** on a non-existent counter throws an error.
+- **Get** and **Reset** on a non-existent counter throw an error.
 
 ### Directory Resource
 
