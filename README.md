@@ -33,6 +33,20 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 
 ## Operations Reference
 
+### Counter Resource
+
+| Operation | Fields | Description | Output |
+|-----------|--------|-------------|--------|
+| **Get** | Counter Name (required) | Reads the current counter value | `{ "counter": "name", "value": 42 }` |
+| **Increment** | Counter Name, Increment By, Start At | Increments a counter and returns the new value. Creates it at `startAt` on first call | `{ "counter": "name", "value": 43 }` |
+| **Reset** | Counter Name, Reset To | Resets a counter to a target value. Creates it if it doesn't exist | `{ "counter": "name", "value": 0 }` |
+
+- **Increment By** (default `1`) — amount to add each call.
+- **Start At** (default `0`) — value to create the counter at if it doesn't exist yet. Ignored once the counter exists.
+- **Reset To** (default `0`) — value to set the counter to on reset.
+- Counters are stored as plain text files under `counters/` in the base directory.
+- **Get** on a non-existent counter throws an error.
+
 ### Directory Resource
 
 | Operation | Field | Description | Output |
@@ -64,6 +78,27 @@ The **Separator** field on Record → Append defaults to a newline. You can type
 
 ## Examples
 
+### Counter: basic counting
+
+```
+KeyValue (Counter → Increment, name: "page_visits")
+  → first call returns { "counter": "page_visits", "value": 1 }
+  → second call returns { "counter": "page_visits", "value": 2 }
+```
+
+```
+KeyValue (Counter → Reset, name: "page_visits")
+  → returns { "counter": "page_visits", "value": 0 }
+```
+
+### Counter: starting at a custom value
+
+```
+KeyValue (Counter → Increment, name: "invoice", Start At: 1000)
+  → first call returns { "counter": "invoice", "value": 1001 }
+  → second call returns { "counter": "invoice", "value": 1002 }
+```
+
 ### Create a directory and write a record
 
 ```
@@ -89,6 +124,7 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 
 | n8n concept | Filesystem |
 |-------------|------------|
+| Counter | Plain text file under `counters/` containing a number |
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
 | Value | Plain UTF-8 text stored in the file |

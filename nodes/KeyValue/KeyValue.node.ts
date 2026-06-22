@@ -40,6 +40,7 @@ export class KeyValue implements INodeType {
 				name: 'resource',
 				type: 'options',
 				options: [
+					{ name: 'Counter', value: 'counter' },
 					{ name: 'Directory', value: 'directory' },
 					{ name: 'Record', value: 'record' },
 				],
@@ -110,6 +111,22 @@ export class KeyValue implements INodeType {
 					{ name: 'Write', value: 'write', description: 'Write (create or overwrite) a record', action: 'Write a record' },
 				],
 				default: 'read',
+				noDataExpression: true,
+			},
+			// Counter operations (alphabetically sorted)
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: { resource: ['counter'] },
+				},
+				options: [
+					{ name: 'Get', value: 'get', description: 'Read the current counter value without changing it', action: 'Get a counter value' },
+					{ name: 'Increment', value: 'increment', description: 'Increment a counter and return the new value', action: 'Increment a counter' },
+					{ name: 'Reset', value: 'reset', description: 'Reset a counter to a target value', action: 'Reset a counter' },
+				],
+				default: 'increment',
 				noDataExpression: true,
 			},
 			// Record: directoryName field
@@ -200,6 +217,61 @@ export class KeyValue implements INodeType {
 				default: '',
 				placeholder: 'active',
 				description: 'Substring to match inside record content. Leave empty to match all.',
+			},
+			// Counter fields
+			{
+				displayName: 'Counter Name',
+				name: 'counterName',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: { resource: ['counter'] },
+				},
+				default: '',
+				placeholder: 'my_counter',
+				description: 'Name of the counter. Stored as a plain text file under counters/.',
+			},
+			{
+				displayName: 'Increment By',
+				name: 'incrementBy',
+				type: 'number',
+				displayOptions: {
+					show: {
+						resource: ['counter'],
+						operation: ['increment'],
+					},
+				},
+				default: 1,
+				placeholder: '1',
+				description: 'Amount to add each time the counter is incremented',
+			},
+			{
+				displayName: 'Start At',
+				name: 'startAt',
+				type: 'number',
+				displayOptions: {
+					show: {
+						resource: ['counter'],
+						operation: ['increment'],
+					},
+				},
+				default: 0,
+				placeholder: '0',
+				description: 'Value to create the counter at if it does not exist yet. Ignored once the counter exists.',
+			},
+			{
+				displayName: 'Reset To',
+				name: 'resetTo',
+				type: 'number',
+				displayOptions: {
+					show: {
+						resource: ['counter'],
+						operation: ['reset'],
+					},
+				},
+				default: 0,
+				placeholder: '0',
+				description: 'Value to set the counter to',
 			},
 		],
 	};
@@ -321,8 +393,42 @@ export class KeyValue implements INodeType {
 							returnData.push({ json: { directory: directoryName, key, deleted: true }, pairedItem: { item: i } });
 						}
 					}
-				}
-			} catch (error) {
+					} else if (resource === 'counter') {
+						// --- Counter operations ---
+						const counterName = this.getNodeParameter('counterName', i) as string;
+						const countersDir = path.join(BASE_DIR, 'counters');
+						const counterPath = path.join(countersDir, counterName);
+
+						if (operation === 'get') {
+							if (!fs.existsSync(counterPath)) {
+								throw new NodeApiError(this.getNode(), {
+									message: `Counter "${counterName}" does not exist`,
+								} as JsonObject, { itemIndex: i });
+							}
+							const value = Number(fs.readFileSync(counterPath, 'utf-8'));
+							returnData.push({ json: { counter: counterName, value }, pairedItem: { item: i } });
+						} else if (operation === 'increment') {
+							const incrementBy = this.getNodeParameter('incrementBy', i, 1) as number;
+							const startAt = this.getNodeParameter('startAt', i, 0) as number;
+							if (!fs.existsSync(countersDir)) {
+								fs.mkdirSync(countersDir, { recursive: true });
+							}
+							const currentValue = fs.existsSync(counterPath)
+								? Number(fs.readFileSync(counterPath, 'utf-8'))
+								: startAt;
+							const newValue = currentValue + incrementBy;
+							fs.writeFileSync(counterPath, String(newValue), 'utf-8');
+							returnData.push({ json: { counter: counterName, value: newValue }, pairedItem: { item: i } });
+						} else if (operation === 'reset') {
+							const resetTo = this.getNodeParameter('resetTo', i, 0) as number;
+							if (!fs.existsSync(countersDir)) {
+								fs.mkdirSync(countersDir, { recursive: true });
+							}
+							fs.writeFileSync(counterPath, String(resetTo), 'utf-8');
+							returnData.push({ json: { counter: counterName, value: resetTo }, pairedItem: { item: i } });
+						}
+					}
+				} catch (error) {
 				if (this.continueOnFail()) {
 					const executionData = this.helpers.constructExecutionMetaData(
 						this.helpers.returnJsonArray({ error: (error as Error).message }),
