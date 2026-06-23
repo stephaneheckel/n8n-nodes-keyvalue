@@ -119,6 +119,8 @@ Workflow execution:
 
 On subsequent executions, the Get succeeds and the initialization path is skipped entirely — no database errors, no "table already exists" exceptions, no conditional clutter.
 
+![Run-once initialization workflow](assets/run-once-init.png)
+
 ### Create a directory and write a record
 
 ```
