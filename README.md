@@ -99,6 +99,26 @@ KeyValue (Counter → Increment, name: "invoice", Start At: 1000)
   → second call returns { "counter": "invoice", "value": 1002 }
 ```
 
+### Counter: run-once initialization per workflow
+
+When building robust automations, certain heavy lifting — like initializing an environment or creating a specific SQL table — should only happen exactly once. By pairing the counter with n8n's built-in `$workflow.id` variable, you can track initialization states across executions without complex error handling.
+
+```
+Workflow execution:
+
+1. KeyValue (Counter → Get, name: {{ $workflow.id }}, Continue on Fail: true)
+   │
+   ├─ Success → counter exists → init already done → skip to main logic
+   │
+   └─ Fail (first run) → run init once:
+        ├─ [Create SQL table...]
+        ├─ [Seed data...]
+        └─ KeyValue (Counter → Increment, name: {{ $workflow.id }})
+            → marks this workflow as initialized
+```
+
+On subsequent executions, the Get succeeds and the initialization path is skipped entirely — no database errors, no "table already exists" exceptions, no conditional clutter.
+
 ### Create a directory and write a record
 
 ```
