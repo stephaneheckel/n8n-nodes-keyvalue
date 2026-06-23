@@ -99,28 +99,6 @@ KeyValue (Counter → Increment, name: "invoice", Start At: 1000)
   → second call returns { "counter": "invoice", "value": 1002 }
 ```
 
-### Counter: run-once initialization per workflow
-
-When building robust automations, certain heavy lifting — like initializing an environment or creating a specific SQL table — should only happen exactly once. By pairing the counter with n8n's built-in `$workflow.id` variable, you can track initialization states across executions without complex error handling.
-
-```
-Workflow execution:
-
-1. KeyValue (Counter → Get, name: {{ $workflow.id }}, Continue on Fail: true)
-   │
-   ├─ Success → counter exists → init already done → skip to main logic
-   │
-   └─ Fail (first run) → run init once:
-        ├─ [Create SQL table...]
-        ├─ [Seed data...]
-        └─ KeyValue (Counter → Increment, name: {{ $workflow.id }})
-            → marks this workflow as initialized
-```
-
-On subsequent executions, the Get succeeds and the initialization path is skipped entirely — no database errors, no "table already exists" exceptions, no conditional clutter.
-
-![Run-once initialization workflow](assets/run-once-init.png)
-
 ### Create a directory and write a record
 
 ```
@@ -150,6 +128,12 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
 | Value | Plain UTF-8 text stored in the file |
+
+## KeyValue Use Cases
+
+When building robust automation in n8n, certain heavy lifting, like initializing an environment or creating a specific SQL table, should only happen exactly once. By pairing the n8n-nodes-keyvalue community node with the built-in `$workflow.id` variable, you can seamlessly track initialization states across executions without complex error-handling.
+
+![Run-once initialization workflow](assets/run-once-init.png)
 
 ## Environment Variables
 
