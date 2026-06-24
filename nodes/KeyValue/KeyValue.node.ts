@@ -115,6 +115,7 @@ export class KeyValue implements INodeType {
 				},
 				options: [
 					{ name: 'Append', value: 'append', description: 'Append a value to an existing record', action: 'Append to a record' },
+					{ name: 'Count', value: 'count', description: 'Count records in a directory', action: 'Count records' },
 					{ name: 'Delete', value: 'delete', description: 'Delete a record by key', action: 'Delete a record' },
 					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
@@ -206,7 +207,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['list'],
+						operation: ['list', 'count'],
 					},
 				},
 				default: '',
@@ -363,6 +364,23 @@ export class KeyValue implements INodeType {
 							}
 							returnData.push({ json: { directory: directoryName, key: entry.name, value }, pairedItem: { item: i } });
 						}
+					} else if (operation === 'count') {
+						if (!fs.existsSync(dirPath)) {
+							throw new NodeApiError(this.getNode(), {
+								message: `Directory "${directoryName}" does not exist`,
+							} as JsonObject, { itemIndex: i });
+						}
+						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
+						const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
+
+						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+						let count = 0;
+						for (const entry of entries) {
+							if (!entry.isFile()) continue;
+							if (keyRegex && !keyRegex.test(entry.name)) continue;
+							count++;
+						}
+						returnData.push({ json: { directory: directoryName, count }, pairedItem: { item: i } });
 					} else {
 						const key = this.getNodeParameter('key', i) as string;
 						const recordPath = path.join(dirPath, key);
