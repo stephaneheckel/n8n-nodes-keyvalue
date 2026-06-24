@@ -62,6 +62,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
 | **Count** | Directory Name, Key Filter | Counts records in a directory with optional glob filter. Does NOT read file contents — only directory metadata | `{ "directory": "name", "count": 5 }` |
 | **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
+| **Exists** | Directory Name, Key | Checks if a record exists without throwing an error | `{ "directory": "name", "key": "k", "exists": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 | **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
 | **Write** | Directory Name, Key, Value | Creates/overwrites a record. JSON objects/arrays are auto-detected and stored as parsed JSON | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
@@ -128,6 +129,14 @@ KeyValue (Record → Count, directory: "users", Key Filter: "admin_*")
   → returns { "directory": "users", "count": 3 }
 ```
 
+### Conditional branching with Exists
+
+```
+KeyValue (Record → Exists, directory: "cache", key: "latest_report")
+  → returns { "directory": "cache", "key": "latest_report", "exists": true }
+  → use {{ $json.exists }} in an IF node to branch
+```
+
 ### JSON auto-detection
 
 When you write a record whose value is a valid JSON object or array (`{...}` / `[...]`), it is stored as structured JSON and automatically parsed back on Read and List:
@@ -157,6 +166,7 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Record (key-value pair) | File whose name is the key, contents are the value |
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
 | Count | Lightweight tally of records in a directory — no file contents read |
+| Exists | `fs.existsSync` check — no file contents read, never throws |
 
 ## KeyValue Use Cases
 
