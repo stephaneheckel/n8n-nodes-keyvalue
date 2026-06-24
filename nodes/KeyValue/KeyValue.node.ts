@@ -117,6 +117,7 @@ export class KeyValue implements INodeType {
 					{ name: 'Append', value: 'append', description: 'Append a value to an existing record', action: 'Append to a record' },
 					{ name: 'Count', value: 'count', description: 'Count records in a directory', action: 'Count records' },
 					{ name: 'Delete', value: 'delete', description: 'Delete a record by key', action: 'Delete a record' },
+					{ name: 'Exists', value: 'exists', description: 'Check if a record exists', action: 'Check if a record exists' },
 					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
 					{ name: 'Write', value: 'write', description: 'Write (create or overwrite) a record', action: 'Write a record' },
@@ -162,7 +163,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['read', 'write', 'delete', 'append'],
+						operation: ['read', 'write', 'delete', 'append', 'exists'],
 					},
 				},
 				default: '',
@@ -430,6 +431,9 @@ export class KeyValue implements INodeType {
 							}
 							fs.unlinkSync(recordPath);
 							returnData.push({ json: { directory: directoryName, key, deleted: true }, pairedItem: { item: i } });
+						} else if (operation === 'exists') {
+							const exists = fs.existsSync(recordPath);
+							returnData.push({ json: { directory: directoryName, key, exists }, pairedItem: { item: i } });
 						}
 					}
 					} else if (resource === 'counter') {
