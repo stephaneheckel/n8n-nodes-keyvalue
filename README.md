@@ -132,6 +132,10 @@ KeyValue (Record → Write, directory: "contacts", key: "jean",
 KeyValue (Record → Read, directory: "contacts", key: "jean")
   → returns { "prenom": "Jean", "nom": "Dupont", ... }
   → use {{ $json.value.prenom }} in downstream nodes
+
+KeyValue (Record → Write, directory: "contacts", key: "jean_copy",
+  value: {{ $json.value }})
+  → the parsed array/object is passed directly and stored as JSON
 ```
 
 Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `[...]` trigger JSON mode. The Append operation always treats values as plain text.
