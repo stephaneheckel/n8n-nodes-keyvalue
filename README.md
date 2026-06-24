@@ -60,6 +60,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | Operation | Fields | Description | Output |
 |-----------|--------|-------------|--------|
 | **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
+| **Count** | Directory Name, Key Filter | Counts records in a directory with optional glob filter. Does NOT read file contents — only directory metadata | `{ "directory": "name", "count": 5 }` |
 | **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 | **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
@@ -68,7 +69,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 ### List Filters
 
 - **Directory Filter** (Directory → List) — glob pattern on directory names. `*` matches any characters, `?` matches one. Example: `prod_*` matches `prod_eu`, `prod_us`.
-- **Key Filter** (Record → List) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
+- **Key Filter** (Record → List, Count) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
 - **Value Filter** (Record → List) — substring match inside file content. Example: `active` returns only records containing "active".
 - All filters combined use AND logic. Empty = match all.
 
@@ -120,6 +121,13 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
   → returns only keys starting with "admin_"
 ```
 
+### Count records in a directory
+
+```
+KeyValue (Record → Count, directory: "users", Key Filter: "admin_*")
+  → returns { "directory": "users", "count": 3 }
+```
+
 ### JSON auto-detection
 
 When you write a record whose value is a valid JSON object or array (`{...}` / `[...]`), it is stored as structured JSON and automatically parsed back on Read and List:
@@ -148,6 +156,7 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
+| Count | Lightweight tally of records in a directory — no file contents read |
 
 ## KeyValue Use Cases
 
