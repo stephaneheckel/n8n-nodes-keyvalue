@@ -18,6 +18,16 @@ function globToRegex(pattern: string): RegExp {
 	return new RegExp(`^${regexStr}$`);
 }
 
+function tryParseJSON(raw: string): string | object {
+	try {
+		const parsed = JSON.parse(raw);
+		if (typeof parsed === 'object' && parsed !== null) {
+			return parsed;
+		}
+	} catch { /* not JSON, return raw string */ }
+	return raw;
+}
+
 export class KeyValue implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'KeyValue',
@@ -171,7 +181,7 @@ export class KeyValue implements INodeType {
 				},
 				default: '',
 				placeholder: 'record value',
-				description: 'The value to store (plain text)',
+				description: 'The value to store. Plain text is stored as-is; JSON objects/arrays are auto-detected and stored as parsed JSON.',
 			},
 			// Record: separator field (append only)
 			{
@@ -345,9 +355,13 @@ export class KeyValue implements INodeType {
 							if (keyRegex && !keyRegex.test(entry.name)) continue;
 							const recPath = path.join(dirPath, entry.name);
 							const content = fs.readFileSync(recPath, 'utf-8');
+							const value = tryParseJSON(content);
 							// Apply value filter
-							if (valueFilter && !content.includes(valueFilter)) continue;
-							returnData.push({ json: { directory: directoryName, key: entry.name, value: content }, pairedItem: { item: i } });
+							if (valueFilter) {
+								const contentStr = typeof value === 'string' ? value : JSON.stringify(value);
+								if (!contentStr.includes(valueFilter)) continue;
+							}
+							returnData.push({ json: { directory: directoryName, key: entry.name, value }, pairedItem: { item: i } });
 						}
 					} else {
 						const key = this.getNodeParameter('key', i) as string;
@@ -375,13 +389,17 @@ export class KeyValue implements INodeType {
 								} as JsonObject, { itemIndex: i });
 							}
 							const content = fs.readFileSync(recordPath, 'utf-8');
-							returnData.push({ json: { directory: directoryName, key, value: content }, pairedItem: { item: i } });
+							const value = tryParseJSON(content);
+							returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
 						} else if (operation === 'write') {
-							const value = String(this.getNodeParameter('value', i));
+							const raw = String(this.getNodeParameter('value', i));
+							const parsed = tryParseJSON(raw);
+							const value = parsed;
+							const storageValue = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
 							if (!fs.existsSync(dirPath)) {
 								fs.mkdirSync(dirPath, { recursive: true });
 							}
-							fs.writeFileSync(recordPath, value, 'utf-8');
+							fs.writeFileSync(recordPath, storageValue, 'utf-8');
 							returnData.push({ json: { directory: directoryName, key, value, written: true }, pairedItem: { item: i } });
 						} else if (operation === 'delete') {
 							if (!fs.existsSync(recordPath)) {
