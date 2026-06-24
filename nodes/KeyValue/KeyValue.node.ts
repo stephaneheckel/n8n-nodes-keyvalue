@@ -392,8 +392,11 @@ export class KeyValue implements INodeType {
 							const value = tryParseJSON(content);
 							returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
 						} else if (operation === 'write') {
-							const raw = String(this.getNodeParameter('value', i));
-							const parsed = tryParseJSON(raw);
+							const rawParam = this.getNodeParameter('value', i);
+							// If an object/array arrives directly from n8n (e.g. {{ $json }}), treat as JSON
+							const parsed = typeof rawParam === 'object' && rawParam !== null
+								? rawParam
+								: tryParseJSON(String(rawParam));
 							const value = parsed;
 							const storageValue = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
 							if (!fs.existsSync(dirPath)) {
