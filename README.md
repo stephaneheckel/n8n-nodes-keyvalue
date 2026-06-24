@@ -62,8 +62,8 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
 | **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
-| **Read** | Directory Name, Key | Reads a record's value | `{ "directory": "name", "key": "k", "value": "..." }` |
-| **Write** | Directory Name, Key, Value | Creates/overwrites a record | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
+| **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
+| **Write** | Directory Name, Key, Value | Creates/overwrites a record. JSON objects/arrays are auto-detected and stored as parsed JSON | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
 
 ### List Filters
 
@@ -120,6 +120,22 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
   → returns only keys starting with "admin_"
 ```
 
+### JSON auto-detection
+
+When you write a record whose value is a valid JSON object or array (`{...}` / `[...]`), it is stored as structured JSON and automatically parsed back on Read and List:
+
+```
+KeyValue (Record → Write, directory: "contacts", key: "jean",
+  value: {"prenom": "Jean", "nom": "Dupont", "telephone": "+33 6 12 34 56 78"})
+  → stored as formatted JSON on disk
+
+KeyValue (Record → Read, directory: "contacts", key: "jean")
+  → returns { "prenom": "Jean", "nom": "Dupont", ... }
+  → use {{ $json.value.prenom }} in downstream nodes
+```
+
+Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `[...]` trigger JSON mode. The Append operation always treats values as plain text.
+
 ## Data Model
 
 | n8n concept | Filesystem |
@@ -127,7 +143,7 @@ KeyValue (Record → List, directory: "users", Key Filter: "admin_*")
 | Counter | Plain text file under `counters/` containing a number |
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
-| Value | Plain UTF-8 text stored in the file |
+| Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
 
 ## KeyValue Use Cases
 
