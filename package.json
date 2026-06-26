@@ -33,7 +33,8 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
-      "dist/nodes/KeyValue/KeyValue.node.js"
+      "dist/nodes/KeyValue/KeyValue.node.js",
+      "dist/nodes/KeyValueTrigger/KeyValueTrigger.node.js"
     ],
     "strict": false
   },

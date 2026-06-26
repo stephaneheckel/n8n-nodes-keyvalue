@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import type {
 	IExecuteFunctions,
 	INodeExecutionData,
@@ -9,24 +8,7 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
-
-const BASE_DIR = process.env.N8N_KEYVALUE_DIR || path.join(os.homedir(), '.n8n-keyvalue');
-
-function globToRegex(pattern: string): RegExp {
-	const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-	const regexStr = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
-	return new RegExp(`^${regexStr}$`);
-}
-
-function tryParseJSON(raw: string): string | object {
-	try {
-		const parsed = JSON.parse(raw);
-		if (typeof parsed === 'object' && parsed !== null) {
-			return parsed;
-		}
-	} catch { /* not JSON, return raw string */ }
-	return raw;
-}
+import { BASE_DIR, globToRegex, tryParseJSON } from '../utils';
 
 export class KeyValue implements INodeType {
 	description: INodeTypeDescription = {
