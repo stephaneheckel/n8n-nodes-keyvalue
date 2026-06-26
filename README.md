@@ -1,6 +1,6 @@
 # n8n-nodes-keyvalue
 
-A filesystem-based key-value store node for [n8n](https://n8n.io). Store, retrieve, list, and delete key-value pairs using plain directories and text files.
+A filesystem-based key-value store and trigger node for [n8n](https://n8n.io). Store, retrieve, list, and delete key-value pairs using plain directories and text files. Also includes a trigger node that watches directories for new or changed records.
 
 ```
 ~/.n8n-keyvalue/          ← your store root
@@ -76,7 +76,67 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 
 ### Append Separator
 
-The **Separator** field on Record → Append defaults to a newline. You can type `\n` for a newline, use `,` for CSV-style, or leave empty for direct concatenation.
+The **Separator** field on Record → Append defaults to a newline. You can type `\\n` for a newline, use `,` for CSV-style, or leave empty for direct concatenation.
+
+## KeyValue Trigger Node
+
+The **KeyValue Trigger** node watches a directory for new or changed records and triggers your workflow when changes are detected. Place it at the start of a workflow — it requires no upstream input.
+
+### Trigger Operations
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| **Directory Name** | string | ✅ | `''` | Directory to watch for changes |
+| **Poll Time** | number | ❌ | `30` | Interval in seconds between each scan. Minimum: 5 seconds |
+| **Watch Events** | multiOptions | ✅ | `['add', 'change']` | `File Created` — new record files ; `File Changed` — modified record files |
+| **Key Filter** | string | ❌ | `''` | Glob pattern to filter records by filename. Leave empty to match all |
+| **Include Content** | boolean | ❌ | `true` | Read and return the content of detected records. Disable for faster scanning |
+
+### Trigger Output
+
+Each detected file produces one item:
+
+```json
+{
+  "directory": "incoming",
+  "key": "order_001.json",
+  "event": "add",
+  "value": { "id": 1, "total": 99.99 },
+  "mtimeMs": 1719403200000
+}
+```
+
+When no changes are detected, the scan is silent (no execution).
+
+### Trigger Quick Start
+
+1. Add a **KeyValue Trigger** node to a new workflow.
+2. Set **Directory Name** to `my_queue`, **Poll Time** to `15`.
+3. Execute the workflow — it activates and waits.
+4. In a **separate workflow**, use **KeyValue (Record → Write)** to create a file in `my_queue/`.
+5. Within 15 seconds, the trigger workflow fires with `event: "add"`.
+
+### Trigger Examples
+
+```
+KeyValue Trigger (directory: "orders", Poll Time: 10, events: add + change)
+  → IF ({{ $json.event }} = "add")
+    → HTTP Request (POST to fulfillment API)
+```
+
+```
+KeyValue Trigger (directory: "logs", Key Filter: "error_*", Include Content: true)
+  → Email (send alert with file content)
+```
+
+### Polling Limitation
+
+The trigger uses **time-based polling** (`setInterval`). It compares file modification timestamps (`mtime`) between scans, not individual write operations:
+
+- **Rapid updates** (multiple writes to the same file between two scans) are collapsed into a single `change` event.
+- Example: 10 writes in 3 seconds with `Poll Time: 15` → at most 1-2 events captured.
+- **Solution**: reduce `Poll Time` (minimum 5s) for high-frequency use cases.
+- **No event history**: the trigger only sees "the file changed since last scan", not "how many times".
 
 ## Examples
 
@@ -167,6 +227,7 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
 | Count | Lightweight tally of records in a directory — no file contents read |
 | Exists | `fs.existsSync` check — no file contents read, never throws |
+| Trigger | Polling-based watcher on a directory. Detects add/change via `mtime` comparison between scans |
 
 ## KeyValue Use Cases
 
