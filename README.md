@@ -138,6 +138,16 @@ The trigger uses **time-based polling** (`setInterval`). It compares file modifi
 - **Solution**: reduce `Poll Time` (minimum 5s) for high-frequency use cases.
 - **No event history**: the trigger only sees "the file changed since last scan", not "how many times".
 
+### State File
+
+The trigger stores its state in `.keyvalue-watch-state.json` inside the watched directory:
+
+```json
+{ "filename": 1719403200000, ... }
+```
+
+It tracks `mtimeMs` for each file. This file is overwritten on every scan and visible in `Record → List`. Deleting it resets the trigger to a clean baseline (no existing files will fire events on restart).
+
 ## Examples
 
 ### Counter: basic counting
