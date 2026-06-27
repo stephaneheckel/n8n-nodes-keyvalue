@@ -59,6 +59,14 @@ Write a record with `Activate At` (future timestamp) and/or `TTL` (seconds). The
 
 ---
 
+## Papercuts
+
+Small fixes and UX improvements — quick wins.
+
+| # | Description |
+|---|-------------|
+| 18 | Add `\t` (tab) normalization to the Separator field, alongside existing `\n` |
+
 ## Other Ideas
 
 | # | Scope | Description |
