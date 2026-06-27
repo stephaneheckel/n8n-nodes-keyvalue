@@ -399,7 +399,7 @@ export class KeyValue implements INodeType {
 						const recordPath = path.join(dirPath, key);
 
 						if (operation === 'append') {
-							const value = String(this.getNodeParameter('value', i));
+							const value = String(this.getNodeParameter('value', i)).trimEnd();
 							let separator = this.getNodeParameter('separator', i, '\n') as string;
 							// Normalize: if user typed literal \n, convert to real newline
 							separator = separator.replace(/\\n/g, '\n');
