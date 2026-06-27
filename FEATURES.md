@@ -66,3 +66,4 @@ Write a record with `Activate At` (future timestamp) and/or `TTL` (seconds). The
 | 14 | CLI | `kv` command-line interface — thin wrapper over `utils.ts`, all 14 ops from terminal |
 | 15 | Config | Base Directory override — per-node field instead of `N8N_KEYVALUE_DIR` env var only |
 | 16 | New Package | `n8n-nodes-duckdb` — SQL queries on Parquet/CSV/JSON files via DuckDB |
+| 17 | Auth | API key authentication via n8n credential system — guard node execution with `N8N_KEYVALUE_API` env var |
