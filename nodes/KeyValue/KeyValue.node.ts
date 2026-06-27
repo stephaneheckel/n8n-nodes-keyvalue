@@ -336,6 +336,8 @@ export class KeyValue implements INodeType {
 						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 						for (const entry of entries) {
 							if (!entry.isFile()) continue;
+							// Skip internal state files
+							if (entry.name.startsWith('.keyvalue')) continue;
 							// Apply key filter
 							if (keyRegex && !keyRegex.test(entry.name)) continue;
 							const recPath = path.join(dirPath, entry.name);
