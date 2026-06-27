@@ -112,7 +112,7 @@ export class KeyValueTrigger implements INodeType {
 
 			for (const entry of entries) {
 				if (!entry.isFile()) continue;
-						if (keyRegex && !keyRegex.test(entry.name)) continue;
+				if (keyRegex && !keyRegex.test(entry.name)) continue;
 				currentState[entry.name] = fs.statSync(path.join(dirPath, entry.name)).mtimeMs;
 			}
 
