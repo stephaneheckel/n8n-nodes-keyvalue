@@ -65,6 +65,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | **Exists** | Directory Name, Key | Checks if a record exists without throwing an error | `{ "directory": "name", "key": "k", "exists": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 | **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
+| **Touch** | Directory Name, Key | Updates the timestamp of a record without changing its value. Creates an empty record if the key does not exist | `{ "directory": "name", "key": "k", "touched": true }` or `{ "directory": "name", "key": "k", "touched": true, "created": true }` |
 | **Write** | Directory Name, Key, Value | Creates/overwrites a record. JSON objects/arrays are auto-detected and stored as parsed JSON | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
 
 ### List Filters
@@ -207,6 +208,19 @@ KeyValue (Record → Exists, directory: "cache", key: "latest_report")
   → use {{ $json.exists }} in an IF node to branch
 ```
 
+### Heartbeat / liveness check with Touch
+
+```
+Cron (every 5 min) → KeyValue (Record → Touch, directory: "health", key: "worker_alive")
+  → returns { "directory": "health", "key": "worker_alive", "touched": true }
+
+Monitor workflow → KeyValue (Record → Stat / Read, directory: "health", key: "worker_alive")
+  → check mtime or use a KeyValue Trigger on "health/" with Event: File Changed
+  → if no touch in 10 minutes → alert
+```
+
+Touch creates the record on first call (`created: true`), then only updates timestamps on subsequent calls (`touched: true`). The KeyValue Trigger treats Touch as a `change` event.
+
 ### JSON auto-detection
 
 When you write a record whose value is a valid JSON object or array (`{...}` / `[...]`), it is stored as structured JSON and automatically parsed back on Read and List:
@@ -237,6 +251,7 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
 | Count | Lightweight tally of records in a directory — no file contents read |
 | Exists | `fs.existsSync` check — no file contents read, never throws |
+| Touch | Updates record mtime only — no content I/O on existing records. Creates an empty record if the key does not exist |
 | Trigger | Polling-based watcher on a directory. Detects add/change via `mtime` comparison between scans |
 
 ## KeyValue Use Cases

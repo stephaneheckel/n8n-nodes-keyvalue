@@ -102,6 +102,7 @@ export class KeyValue implements INodeType {
 					{ name: 'Exists', value: 'exists', description: 'Check if a record exists', action: 'Check if a record exists' },
 					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
+					{ name: 'Touch', value: 'touch', description: 'Update the timestamp of a record without changing its value. Creates the record if it does not exist.', action: 'Touch a record' },
 					{ name: 'Write', value: 'write', description: 'Write (create or overwrite) a record', action: 'Write a record' },
 				],
 				default: 'read',
@@ -145,7 +146,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['read', 'write', 'delete', 'append', 'exists'],
+						operation: ['read', 'write', 'delete', 'append', 'exists', 'touch'],
 					},
 				},
 				default: '',
@@ -416,6 +417,19 @@ export class KeyValue implements INodeType {
 						} else if (operation === 'exists') {
 							const exists = fs.existsSync(recordPath);
 							returnData.push({ json: { directory: directoryName, key, exists }, pairedItem: { item: i } });
+						} else if (operation === 'touch') {
+							const now = new Date();
+							if (fs.existsSync(recordPath)) {
+								fs.utimesSync(recordPath, now, now);
+								returnData.push({ json: { directory: directoryName, key, touched: true }, pairedItem: { item: i } });
+							} else {
+								if (!fs.existsSync(dirPath)) {
+									fs.mkdirSync(dirPath, { recursive: true });
+								}
+								fs.closeSync(fs.openSync(recordPath, 'w'));
+								fs.utimesSync(recordPath, now, now);
+								returnData.push({ json: { directory: directoryName, key, touched: true, created: true }, pairedItem: { item: i } });
+							}
 						}
 					}
 					} else if (resource === 'counter') {
