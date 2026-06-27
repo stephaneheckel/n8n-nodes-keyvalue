@@ -421,7 +421,7 @@ export class KeyValue implements INodeType {
 							const now = new Date();
 							if (fs.existsSync(recordPath)) {
 								fs.utimesSync(recordPath, now, now);
-								returnData.push({ json: { directory: directoryName, key, touched: true }, pairedItem: { item: i } });
+								returnData.push({ json: { directory: directoryName, key, touched: true, created: false }, pairedItem: { item: i } });
 							} else {
 								if (!fs.existsSync(dirPath)) {
 									fs.mkdirSync(dirPath, { recursive: true });

@@ -65,7 +65,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | **Exists** | Directory Name, Key | Checks if a record exists without throwing an error | `{ "directory": "name", "key": "k", "exists": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 | **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
-| **Touch** | Directory Name, Key | Updates the timestamp of a record without changing its value. Creates an empty record if the key does not exist | `{ "directory": "name", "key": "k", "touched": true }` or `{ "directory": "name", "key": "k", "touched": true, "created": true }` |
+| **Touch** | Directory Name, Key | Updates the timestamp of a record without changing its value. Creates an empty record if the key does not exist | `{ "directory": "name", "key": "k", "touched": true, "created": false }` or `{ "directory": "name", "key": "k", "touched": true, "created": true }` |
 | **Write** | Directory Name, Key, Value | Creates/overwrites a record. JSON objects/arrays are auto-detected and stored as parsed JSON | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
 
 ### List Filters
