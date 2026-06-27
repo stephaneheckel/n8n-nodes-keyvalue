@@ -61,7 +61,7 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 |-----------|--------|-------------|--------|
 | **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
 | **Count** | Directory Name, Key Filter | Counts records in a directory with optional glob filter. Does NOT read file contents — only directory metadata | `{ "directory": "name", "count": 5 }` |
-| **Delete** | Directory Name, Key | Deletes a record | `{ "directory": "name", "key": "k", "deleted": true }` |
+| **Delete** | Directory Name, Key Filter, Value Filter | Deletes records matching filters. Both filters optional — at least one required. Use "*" for all records | `[{ "directory": "name", "key": "k", "deleted": true }]` |
 | **Exists** | Directory Name, Key | Checks if a record exists without throwing an error | `{ "directory": "name", "key": "k", "exists": true }` |
 | **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
 | **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
@@ -71,8 +71,8 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 ### List Filters
 
 - **Directory Filter** (Directory → List) — glob pattern on directory names. `*` matches any characters, `?` matches one. Example: `prod_*` matches `prod_eu`, `prod_us`.
-- **Key Filter** (Record → List, Count) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
-- **Value Filter** (Record → List) — substring match inside file content. Example: `active` returns only records containing "active".
+- **Key Filter** (Record → List, Count, Delete) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
+- **Value Filter** (Record → List, Delete) — substring match inside file content. Example: `active` returns only records containing "active".
 - All filters combined use AND logic. Empty = match all.
 
 ### Append Separator
@@ -200,6 +200,24 @@ KeyValue (Record → Count, directory: "users", Key Filter: "admin_*")
   → returns { "directory": "users", "count": 3 }
 ```
 
+### Delete records by filter
+
+```
+# Delete a single record by exact key
+KeyValue (Record → Delete, directory: "cache", Key Filter: "old_report")
+
+# Delete all records matching a pattern
+KeyValue (Record → Delete, directory: "cache", Key Filter: "temp_*")
+
+# Delete all records (explicit — must type "*")
+KeyValue (Record → Delete, directory: "cache", Key Filter: "*")
+
+# Delete records containing "expired" in content
+KeyValue (Record → Delete, directory: "cache", Value Filter: "expired")
+```
+
+At least one filter is required. Leaving both empty throws an error — this is a safety guard.
+
 ### Conditional branching with Exists
 
 ```
@@ -248,6 +266,7 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Counter | Plain text file under `counters/` containing a number |
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
+| Delete (filter-based) | Scans directory, applies Key Filter (glob) and/or Value Filter (substring), deletes matches. At least one filter required |
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
 | Count | Lightweight tally of records in a directory — no file contents read |
 | Exists | `fs.existsSync` check — no file contents read, never throws |

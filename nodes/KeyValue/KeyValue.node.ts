@@ -98,7 +98,7 @@ export class KeyValue implements INodeType {
 				options: [
 					{ name: 'Append', value: 'append', description: 'Append a value to an existing record', action: 'Append to a record' },
 					{ name: 'Count', value: 'count', description: 'Count records in a directory', action: 'Count records' },
-					{ name: 'Delete', value: 'delete', description: 'Delete a record by key', action: 'Delete a record' },
+					{ name: 'Delete', value: 'delete', description: 'Delete records by key filter and/or value filter', action: 'Delete records' },
 					{ name: 'Exists', value: 'exists', description: 'Check if a record exists', action: 'Check if a record exists' },
 					{ name: 'List', value: 'list', description: 'List all records in a directory', action: 'List records' },
 					{ name: 'Read', value: 'read', description: 'Read a record by key', action: 'Read a record' },
@@ -146,7 +146,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['read', 'write', 'delete', 'append', 'exists', 'touch'],
+						operation: ['read', 'write', 'append', 'exists', 'touch'],
 					},
 				},
 				default: '',
@@ -183,7 +183,7 @@ export class KeyValue implements INodeType {
 				placeholder: '\\n',
 				description: 'Separator inserted before the appended value. Defaults to a newline. You can type \\n for a newline. Leave empty for direct concatenation.',
 			},
-			// Record: key filter (list only)
+			// Record: key filter (list, count, delete)
 			{
 				displayName: 'Key Filter',
 				name: 'keyFilter',
@@ -191,14 +191,14 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['list', 'count'],
+						operation: ['list', 'count', 'delete'],
 					},
 				},
 				default: '',
 				placeholder: 'user_*',
 				description: 'Glob pattern to filter records by key (filename). Use * for any characters, ? for one character. Leave empty to match all',
 			},
-			// Record: value filter (list only)
+			// Record: value filter (list, delete)
 			{
 				displayName: 'Value Filter',
 				name: 'valueFilter',
@@ -206,7 +206,7 @@ export class KeyValue implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['record'],
-						operation: ['list'],
+						operation: ['list', 'delete'],
 					},
 				},
 				default: '',
@@ -365,6 +365,36 @@ export class KeyValue implements INodeType {
 							count++;
 						}
 						returnData.push({ json: { directory: directoryName, count }, pairedItem: { item: i } });
+					} else if (operation === 'delete') {
+						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
+						const valueFilter = this.getNodeParameter('valueFilter', i, '') as string;
+
+						if (!keyFilter && !valueFilter) {
+							throw new NodeApiError(this.getNode(), {
+								message: 'At least one filter (Key Filter or Value Filter) is required for Delete. Use "*" as Key Filter to match all records.',
+							} as JsonObject, { itemIndex: i });
+						}
+
+						if (!fs.existsSync(dirPath)) {
+							throw new NodeApiError(this.getNode(), {
+								message: `Directory "${directoryName}" does not exist`,
+							} as JsonObject, { itemIndex: i });
+						}
+
+						const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
+						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+						for (const entry of entries) {
+							if (!entry.isFile()) continue;
+							if (entry.name.startsWith('.keyvalue')) continue;
+							if (keyRegex && !keyRegex.test(entry.name)) continue;
+							const recPath = path.join(dirPath, entry.name);
+							if (valueFilter) {
+								const content = fs.readFileSync(recPath, 'utf-8');
+								if (!content.includes(valueFilter)) continue;
+							}
+							fs.unlinkSync(recPath);
+							returnData.push({ json: { directory: directoryName, key: entry.name, deleted: true }, pairedItem: { item: i } });
+						}
 					} else {
 						const key = this.getNodeParameter('key', i) as string;
 						const recordPath = path.join(dirPath, key);
@@ -406,14 +436,6 @@ export class KeyValue implements INodeType {
 							}
 							fs.writeFileSync(recordPath, storageValue, 'utf-8');
 							returnData.push({ json: { directory: directoryName, key, value, written: true }, pairedItem: { item: i } });
-						} else if (operation === 'delete') {
-							if (!fs.existsSync(recordPath)) {
-								throw new NodeApiError(this.getNode(), {
-									message: `Record "${key}" does not exist in directory "${directoryName}"`,
-								} as JsonObject, { itemIndex: i });
-							}
-							fs.unlinkSync(recordPath);
-							returnData.push({ json: { directory: directoryName, key, deleted: true }, pairedItem: { item: i } });
 						} else if (operation === 'exists') {
 							const exists = fs.existsSync(recordPath);
 							returnData.push({ json: { directory: directoryName, key, exists }, pairedItem: { item: i } });
