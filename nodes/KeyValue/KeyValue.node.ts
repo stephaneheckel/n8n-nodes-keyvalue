@@ -872,12 +872,12 @@ export class KeyValue implements INodeType {
 									if (!fileTags.includes(tagFilter)) continue;
 								}
 
-								// Full-text AND search with scoring
-								const bodyLower = body.toLowerCase();
+								// Full-text AND search with scoring (key + body)
+								const searchText = fileEntry.name + '\n' + body.toLowerCase();
 								let score = 0;
 								let allMatch = true;
 								for (const regex of termRegexes) {
-									const matches = bodyLower.match(regex);
+									const matches = searchText.match(regex);
 									if (!matches) { allMatch = false; break; }
 									score += matches.length;
 								}
@@ -888,17 +888,25 @@ export class KeyValue implements INodeType {
 								if (includeSnippets) {
 									const firstIdx = Math.min(
 										...termRegexes.map((r) => {
-											const m = bodyLower.match(r);
+											const m = searchText.match(r);
 											return m?.index ?? Infinity;
 										}),
 									);
-									if (firstIdx !== Infinity && firstIdx < body.length) {
-										const start = Math.max(0, firstIdx - 60);
-										const termLen = termRegexes[0].source.length;
-										const end = Math.min(body.length, firstIdx + termLen + 60);
-										const prefix = start > 0 ? '...' : '';
-										const suffix = end < body.length ? '...' : '';
-										snippet = prefix + body.slice(start, end).replace(/\n/g, ' ') + suffix;
+									if (firstIdx !== Infinity) {
+										const keyLen = fileEntry.name.length + 1; // +1 for newline separator
+										if (firstIdx < keyLen) {
+											// Match is in the filename
+											snippet = 'key: ' + fileEntry.name;
+										} else {
+											// Match is in the body — adjust index
+											const bodyIdx = firstIdx - keyLen;
+											const start = Math.max(0, bodyIdx - 60);
+											const termLen = termRegexes[0].source.length;
+											const end = Math.min(body.length, bodyIdx + termLen + 60);
+											const prefix = start > 0 ? '...' : '';
+											const suffix = end < body.length ? '...' : '';
+											snippet = prefix + body.slice(start, end).replace(/\n/g, ' ') + suffix;
+										}
 									}
 								}
 
