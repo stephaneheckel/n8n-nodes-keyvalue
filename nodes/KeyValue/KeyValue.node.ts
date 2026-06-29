@@ -384,7 +384,7 @@ export class KeyValue implements INodeType {
 				},
 				default: '',
 				placeholder: 'NodeOperationError itemIndex',
-				description: 'Search terms. Multiple words use AND logic. Case-insensitive.',
+				description: 'List of words, separated by spaces. All words must match (AND logic). Case-insensitive.',
 			},
 			{
 				displayName: 'Directory Filter',
