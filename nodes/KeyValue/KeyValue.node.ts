@@ -888,8 +888,8 @@ export class KeyValue implements INodeType {
 								if (includeSnippets) {
 									const firstIdx = Math.min(
 										...termRegexes.map((r) => {
-											const m = searchText.match(r);
-											return m?.index ?? Infinity;
+											const idx = searchText.search(r);
+											return idx === -1 ? Infinity : idx;
 										}),
 									);
 									if (firstIdx !== Infinity) {
