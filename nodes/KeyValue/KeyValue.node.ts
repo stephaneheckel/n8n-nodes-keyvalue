@@ -769,7 +769,7 @@ export class KeyValue implements INodeType {
 								fmObject.tags = fmTags.split(',').map((t) => t.trim()).filter(Boolean);
 							}
 							if (fmDescription.trim()) fmObject.description = fmDescription.trim();
-							if (fmUpdated.trim()) fmObject.updated = fmUpdated.trim();
+							fmObject.updated = fmUpdated.trim() || new Date().toISOString();
 
 							const storageValue = Object.keys(fmObject).length > 0
 								? formatWithFrontmatter(body, fmObject)
