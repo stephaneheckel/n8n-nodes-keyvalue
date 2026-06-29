@@ -273,6 +273,35 @@ export class KeyValue implements INodeType {
 				placeholder: 'active',
 				description: 'Substring to match inside record content. Leave empty to match all.',
 			},
+			// Record: tag filter (list, count, delete)
+			{
+				displayName: 'Tag Filter',
+				name: 'tagFilter',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['record'],
+						operation: ['list', 'count', 'delete'],
+					},
+				},
+				default: '',
+				placeholder: 'n8n',
+				description: 'Only match records whose frontmatter tags contain this value. Leave empty to match all.',
+			},
+			// Record: include frontmatter (list only)
+			{
+				displayName: 'Include Frontmatter',
+				name: 'includeFrontmatter',
+				type: 'boolean',
+				displayOptions: {
+					show: {
+						resource: ['record'],
+						operation: ['list'],
+					},
+				},
+				default: false,
+				description: 'Whether to parse and return frontmatter metadata and tags for each record. Disable for faster listing.',
+			},
 			// Counter fields
 			{
 				displayName: 'Counter Name',
@@ -384,30 +413,42 @@ export class KeyValue implements INodeType {
 					const dirPath = path.join(BASE_DIR, directoryName);
 
 					if (operation === 'list') {
-						if (!fs.existsSync(dirPath)) {
-							throw new NodeApiError(this.getNode(), {
-								message: `Directory "${directoryName}" does not exist`,
-							} as JsonObject, { itemIndex: i });
-						}
-						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
-						const valueFilter = this.getNodeParameter('valueFilter', i, '') as string;
-						const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
+					if (!fs.existsSync(dirPath)) {
+						throw new NodeApiError(this.getNode(), {
+							message: `Directory "${directoryName}" does not exist`,
+						} as JsonObject, { itemIndex: i });
+					}
+					const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
+					const valueFilter = this.getNodeParameter('valueFilter', i, '') as string;
+					const tagFilter = this.getNodeParameter('tagFilter', i, '') as string;
+					const includeFrontmatter = this.getNodeParameter('includeFrontmatter', i, false) as boolean;
+					const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
 
-						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-						for (const entry of entries) {
-							if (!entry.isFile()) continue;
-							// Apply key filter
-							if (keyRegex && !keyRegex.test(entry.name)) continue;
-							const recPath = path.join(dirPath, entry.name);
-							const content = fs.readFileSync(recPath, 'utf-8');
-							const value = tryParseJSON(content);
-							// Apply value filter
-							if (valueFilter) {
-								const contentStr = typeof value === 'string' ? value : JSON.stringify(value);
-								if (!contentStr.includes(valueFilter)) continue;
-							}
-							returnData.push({ json: { directory: directoryName, key: entry.name, value }, pairedItem: { item: i } });
+					const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+					for (const entry of entries) {
+						if (!entry.isFile()) continue;
+						// Apply key filter
+						if (keyRegex && !keyRegex.test(entry.name)) continue;
+						const recPath = path.join(dirPath, entry.name);
+						const raw = fs.readFileSync(recPath, 'utf-8');
+						const { frontmatter, body } = parseFrontmatter(raw);
+						// Apply tag filter
+						if (tagFilter) {
+							const fileTags = (frontmatter?.tags as string[]) ?? [];
+							if (!fileTags.includes(tagFilter)) continue;
 						}
+						const value = tryParseJSON(body);
+						// Apply value filter
+						if (valueFilter) {
+							const contentStr = typeof value === 'string' ? value : JSON.stringify(value);
+							if (!contentStr.includes(valueFilter)) continue;
+						}
+						if (includeFrontmatter) {
+								returnData.push({ json: { directory: directoryName, key: entry.name, value, frontmatter, tags: (frontmatter?.tags as string[]) ?? [] }, pairedItem: { item: i } });
+							} else {
+								returnData.push({ json: { directory: directoryName, key: entry.name, value }, pairedItem: { item: i } });
+							}
+					}
 					} else if (operation === 'count') {
 						if (!fs.existsSync(dirPath)) {
 							throw new NodeApiError(this.getNode(), {
@@ -415,6 +456,7 @@ export class KeyValue implements INodeType {
 							} as JsonObject, { itemIndex: i });
 						}
 						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
+						const tagFilter = this.getNodeParameter('tagFilter', i, '') as string;
 						const keyRegex = keyFilter ? globToRegex(keyFilter) : null;
 
 						const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -422,16 +464,25 @@ export class KeyValue implements INodeType {
 						for (const entry of entries) {
 							if (!entry.isFile()) continue;
 							if (keyRegex && !keyRegex.test(entry.name)) continue;
+							// Apply tag filter (requires reading the file)
+							if (tagFilter) {
+								const recPath = path.join(dirPath, entry.name);
+								const raw = fs.readFileSync(recPath, 'utf-8');
+								const { frontmatter } = parseFrontmatter(raw);
+								const fileTags = (frontmatter?.tags as string[]) ?? [];
+								if (!fileTags.includes(tagFilter)) continue;
+							}
 							count++;
 						}
 						returnData.push({ json: { directory: directoryName, count }, pairedItem: { item: i } });
 					} else if (operation === 'delete') {
 						const keyFilter = this.getNodeParameter('keyFilter', i, '') as string;
 						const valueFilter = this.getNodeParameter('valueFilter', i, '') as string;
+						const tagFilter = this.getNodeParameter('tagFilter', i, '') as string;
 
-						if (!keyFilter && !valueFilter) {
+						if (!keyFilter && !valueFilter && !tagFilter) {
 							throw new NodeApiError(this.getNode(), {
-								message: 'At least one filter (Key Filter or Value Filter) is required for Delete. Use "*" as Key Filter to match all records.',
+								message: 'At least one filter (Key Filter, Value Filter, or Tag Filter) is required for Delete. Use "*" as Key Filter to match all records.',
 							} as JsonObject, { itemIndex: i });
 						}
 
@@ -447,9 +498,20 @@ export class KeyValue implements INodeType {
 							if (!entry.isFile()) continue;
 							if (keyRegex && !keyRegex.test(entry.name)) continue;
 							const recPath = path.join(dirPath, entry.name);
-							if (valueFilter) {
-								const content = fs.readFileSync(recPath, 'utf-8');
-								if (!content.includes(valueFilter)) continue;
+							// Read content if value or tag filter is needed
+							if (valueFilter || tagFilter) {
+								const raw = fs.readFileSync(recPath, 'utf-8');
+								// Apply tag filter
+								if (tagFilter) {
+									const { frontmatter } = parseFrontmatter(raw);
+									const fileTags = (frontmatter?.tags as string[]) ?? [];
+									if (!fileTags.includes(tagFilter)) continue;
+								}
+								// Apply value filter
+								if (valueFilter) {
+									const { body } = parseFrontmatter(raw);
+									if (!body.includes(valueFilter)) continue;
+								}
 							}
 							fs.unlinkSync(recPath);
 							returnData.push({ json: { directory: directoryName, key: entry.name, deleted: true }, pairedItem: { item: i } });
