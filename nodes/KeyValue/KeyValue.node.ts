@@ -8,7 +8,7 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
-import { BASE_DIR, globToRegex, tryParseJSON } from '../utils';
+import { BASE_DIR, formatWithFrontmatter, globToRegex, parseFrontmatter, tryParseJSON } from '../utils';
 
 export class KeyValue implements INodeType {
 	description: INodeTypeDescription = {
@@ -153,6 +153,26 @@ export class KeyValue implements INodeType {
 				placeholder: 'record_key',
 				description: 'The record key (filename)',
 			},
+			// Record: read mode
+			{
+				displayName: 'Mode',
+				name: 'mode',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: ['record'],
+						operation: ['read'],
+					},
+				},
+				options: [
+					{ name: 'Body Only', value: 'body', description: 'Return only the content (backward compatible)' },
+					{ name: 'Frontmatter Only', value: 'frontmatter', description: 'Return only frontmatter metadata and tags' },
+					{ name: 'Full', value: 'full', description: 'Return frontmatter, tags, and body all together' },
+				],
+				default: 'full',
+				noDataExpression: true,
+				description: 'How to parse the file content. Full returns everything; Body Only matches the legacy behavior.',
+			},
 			// Record: value field
 			{
 				displayName: 'Value',
@@ -167,6 +187,46 @@ export class KeyValue implements INodeType {
 				default: '',
 				placeholder: 'record value',
 				description: 'The value to store. Plain text is stored as-is; JSON objects/arrays are auto-detected and stored as parsed JSON.',
+			},
+			// Record: frontmatter collection (write only)
+			{
+				displayName: 'Frontmatter',
+				name: 'frontmatter',
+				type: 'collection',
+				displayOptions: {
+					show: {
+						resource: ['record'],
+						operation: ['write'],
+					},
+				},
+				default: {},
+				placeholder: 'Add Frontmatter',
+				options: [
+					{
+						displayName: 'Tags',
+						name: 'tags',
+						type: 'string',
+						default: '',
+						placeholder: 'n8n, critical',
+						description: 'Comma-separated list of tags to include in YAML frontmatter',
+					},
+					{
+						displayName: 'Description',
+						name: 'description',
+						type: 'string',
+						default: '',
+						placeholder: 'A short description',
+					},
+					{
+						displayName: 'Updated',
+						name: 'updated',
+						type: 'string',
+						default: '',
+						placeholder: '2026-06-29T14:30:00Z',
+						description: 'ISO 8601 timestamp. Leave empty to use current time.',
+					},
+				],
+				description: 'Optional YAML frontmatter metadata to prepend to the file',
 			},
 			// Record: separator field (append only)
 			{
@@ -419,9 +479,20 @@ export class KeyValue implements INodeType {
 									message: `Record "${key}" does not exist in directory "${directoryName}"`,
 								} as JsonObject, { itemIndex: i });
 							}
-							const content = fs.readFileSync(recordPath, 'utf-8');
-							const value = tryParseJSON(content);
-							returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
+							const raw = fs.readFileSync(recordPath, 'utf-8');
+							const mode = this.getNodeParameter('mode', i, 'full') as string;
+							const { frontmatter, body } = parseFrontmatter(raw);
+							const value = tryParseJSON(body);
+							const tags = (frontmatter?.tags as string[]) ?? [];
+
+							if (mode === 'frontmatter') {
+								returnData.push({ json: { directory: directoryName, key, frontmatter, tags }, pairedItem: { item: i } });
+							} else if (mode === 'body') {
+								returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
+							} else {
+								// full (default)
+								returnData.push({ json: { directory: directoryName, key, value, frontmatter, tags, body }, pairedItem: { item: i } });
+							}
 						} else if (operation === 'write') {
 							const rawParam = this.getNodeParameter('value', i);
 							// If an object/array arrives directly from n8n (e.g. {{ $json }}), treat as JSON
@@ -429,7 +500,24 @@ export class KeyValue implements INodeType {
 								? rawParam
 								: tryParseJSON(String(rawParam));
 							const value = parsed;
-							const storageValue = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+							const body = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+
+							// Collect frontmatter fields from the collection
+							const fmTags = this.getNodeParameter('frontmatter.tags', i, '') as string;
+							const fmDescription = this.getNodeParameter('frontmatter.description', i, '') as string;
+							const fmUpdated = this.getNodeParameter('frontmatter.updated', i, '') as string;
+
+							const fmObject: Record<string, unknown> = {};
+							if (fmTags.trim()) {
+								fmObject.tags = fmTags.split(',').map((t) => t.trim()).filter(Boolean);
+							}
+							if (fmDescription.trim()) fmObject.description = fmDescription.trim();
+							if (fmUpdated.trim()) fmObject.updated = fmUpdated.trim();
+
+							const storageValue = Object.keys(fmObject).length > 0
+								? formatWithFrontmatter(body, fmObject)
+								: body;
+
 							if (!fs.existsSync(dirPath)) {
 								fs.mkdirSync(dirPath, { recursive: true });
 							}

@@ -1,0 +1,55 @@
+[
+    {
+        "firstName": "James",
+        "lastName": "Mitchell",
+        "address": {
+            "line1": "14 Baker Street",
+            "line2": "Marylebone",
+            "city": "London",
+            "postcode": "NW1 6XE",
+            "country": "UK"
+        },
+        "telephone": "+44 20 7946 0123",
+        "mobile": "+44 7700 900123",
+        "email": "james.mitchell@example.co.uk",
+        "dateOfBirth": "1985-03-12",
+        "company": "Mitchell Consulting Ltd",
+        "role": "Director",
+        "active": true
+    },
+    {
+        "firstName": "Sarah",
+        "lastName": "Thompson",
+        "address": {
+            "line1": "742 Evergreen Terrace",
+            "city": "Springfield",
+            "state": "IL",
+            "zipCode": "62701",
+            "country": "US"
+        },
+        "telephone": "+1 217-555-0184",
+        "mobile": "+1 312-555-7329",
+        "email": "sarah.thompson@example.com",
+        "dateOfBirth": "1990-07-28",
+        "company": "Acme Corp",
+        "role": "Senior Engineer",
+        "active": true
+    },
+    {
+        "firstName": "Oliver",
+        "lastName": "Bennett",
+        "address": {
+            "line1": "Flat 3, 27 Canning Street",
+            "city": "Edinburgh",
+            "postcode": "EH3 8EG",
+            "country": "UK"
+        },
+        "telephone": "+44 131 555 0192",
+        "mobile": "+44 7900 456789",
+        "email": "oliver.bennett@example.scot",
+        "dateOfBirth": "1978-11-05",
+        "company": "Bennett & Co Solicitors",
+        "role": "Partner",
+        "active": false
+    }
+]
