@@ -748,7 +748,7 @@ export class KeyValue implements INodeType {
 								returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
 							} else {
 								// full (default)
-								returnData.push({ json: { directory: directoryName, key, value, frontmatter, tags, body }, pairedItem: { item: i } });
+								returnData.push({ json: { directory: directoryName, key, value, frontmatter, body }, pairedItem: { item: i } });
 							}
 						} else if (operation === 'write') {
 							const rawParam = this.getNodeParameter('value', i);
