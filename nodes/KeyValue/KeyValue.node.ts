@@ -845,7 +845,7 @@ export class KeyValue implements INodeType {
 						if (!query) continue;
 						if (!fs.existsSync(BASE_DIR)) continue;
 
-						const terms = query.split(/\s+/).filter((t) => Boolean(t) && !['and', 'or'].includes(t));
+						const terms = query.split(/\s+/).filter(Boolean);
 						// Pre-compile term regexes (escape special chars for safe matching)
 						const termRegexes = terms.map((t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
 						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
