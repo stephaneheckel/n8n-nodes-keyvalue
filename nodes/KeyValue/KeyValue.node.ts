@@ -639,7 +639,7 @@ export class KeyValue implements INodeType {
 							if (!contentStr.includes(valueFilter)) continue;
 						}
 						if (includeFrontmatter) {
-								returnData.push({ json: { directory: directoryName, key: entry.name, value, frontmatter, tags: (frontmatter?.tags as string[]) ?? [] }, pairedItem: { item: i } });
+								returnData.push({ json: { directory: directoryName, key: entry.name, value, frontmatter }, pairedItem: { item: i } });
 							} else {
 								returnData.push({ json: { directory: directoryName, key: entry.name, value }, pairedItem: { item: i } });
 							}
@@ -740,10 +740,9 @@ export class KeyValue implements INodeType {
 							const mode = this.getNodeParameter('mode', i, 'full') as string;
 							const { frontmatter, body } = parseFrontmatter(raw);
 							const value = tryParseJSON(body);
-							const tags = (frontmatter?.tags as string[]) ?? [];
 
 							if (mode === 'frontmatter') {
-								returnData.push({ json: { directory: directoryName, key, frontmatter, tags }, pairedItem: { item: i } });
+								returnData.push({ json: { directory: directoryName, key, frontmatter }, pairedItem: { item: i } });
 							} else if (mode === 'body') {
 								returnData.push({ json: { directory: directoryName, key, value }, pairedItem: { item: i } });
 							} else {
