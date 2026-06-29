@@ -32,10 +32,13 @@ export class KeyValue implements INodeType {
 				name: 'resource',
 				type: 'options',
 				options: [
-					{ name: 'Counter', value: 'counter' },
-					{ name: 'Directory', value: 'directory' },
-					{ name: 'Record', value: 'record' },
-				],
+						{ name: 'Counter', value: 'counter' },
+						{ name: 'Directory', value: 'directory' },
+						{ name: 'Record', value: 'record' },
+						{ name: 'Search', value: 'search' },
+						{ name: 'Tag', value: 'tag' },
+						{ name: 'Vault', value: 'vault' },
+					],
 				default: 'directory',
 				noDataExpression: true,
 				required: true,
@@ -357,6 +360,198 @@ export class KeyValue implements INodeType {
 				placeholder: '0',
 				description: 'Value to set the counter to',
 			},
+			// ── Search resource ─────────────────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: { resource: ['search'] },
+				},
+				options: [
+					{ name: 'Query', value: 'query', description: 'Full-text search across all .md files', action: 'Search across files' },
+				],
+				default: 'query',
+				noDataExpression: true,
+			},
+			{
+				displayName: 'Query',
+				name: 'query',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: { resource: ['search'], operation: ['query'] },
+				},
+				default: '',
+				placeholder: 'NodeOperationError itemIndex',
+				description: 'Search terms. Multiple words use AND logic. Case-insensitive.',
+			},
+			{
+				displayName: 'Directory Filter',
+				name: 'directoryFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['search'], operation: ['query'] },
+				},
+				default: '',
+				placeholder: 'conventions/*',
+				description: 'Glob pattern to restrict which directories to search. Leave empty to search all.',
+			},
+			{
+				displayName: 'Tag Filter',
+				name: 'tagFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['search'], operation: ['query'] },
+				},
+				default: '',
+				placeholder: 'n8n',
+				description: 'Only search files whose frontmatter tags contain this value. Leave empty to search all.',
+			},
+			{
+				displayName: 'Limit',
+				name: 'limit',
+				type: 'number',
+				displayOptions: {
+					show: { resource: ['search'], operation: ['query'] },
+				},
+				default: 50,
+				typeOptions: { minValue: 1, maxValue: 100 },
+				description: 'Max number of results to return',
+			},
+			{
+				displayName: 'Include Snippets',
+				name: 'includeSnippets',
+				type: 'boolean',
+				displayOptions: {
+					show: { resource: ['search'], operation: ['query'] },
+				},
+				default: true,
+				description: 'Whether to include a context snippet around the first match in each result',
+			},
+			// ── Tag resource ─────────────────────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: { resource: ['tag'] },
+				},
+				options: [
+					{ name: 'List', value: 'list', description: 'List all unique tags with file counts', action: 'List tags' },
+				],
+				default: 'list',
+				noDataExpression: true,
+			},
+			{
+				displayName: 'Directory Filter',
+				name: 'directoryFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['tag'], operation: ['list'] },
+				},
+				default: '',
+				placeholder: 'conventions/*',
+				description: 'Glob pattern to restrict which directories to scan. Leave empty to scan all.',
+			},
+			// ── Vault resource ───────────────────────────────────────────────
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: { resource: ['vault'] },
+				},
+				options: [
+					{ name: 'Backlinks', value: 'backlinks', description: 'Find files that reference a target file', action: 'Find backlinks' },
+					{ name: 'Recent', value: 'recent', description: 'List recently modified files', action: 'List recent files' },
+					{ name: 'Stats', value: 'stats', description: 'Aggregate statistics about the vault', action: 'Show vault stats' },
+					{ name: 'Tree', value: 'tree', description: 'Show directory tree structure', action: 'Show directory tree' },
+				],
+				default: 'stats',
+				noDataExpression: true,
+			},
+			// Vault → Tree fields
+			{
+				displayName: 'Path',
+				name: 'path',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['tree'] },
+				},
+				default: '',
+				placeholder: 'conventions',
+				description: 'Directory path to start from. Leave empty for the vault root.',
+			},
+			{
+				displayName: 'Max Depth',
+				name: 'maxDepth',
+				type: 'number',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['tree'] },
+				},
+				default: 3,
+				typeOptions: { minValue: 1, maxValue: 10 },
+				description: 'Maximum directory depth to display',
+			},
+			// Vault → Recent fields
+			{
+				displayName: 'Limit',
+				name: 'limit',
+				type: 'number',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['recent'] },
+				},
+				default: 50,
+				typeOptions: { minValue: 1, maxValue: 100 },
+				description: 'Max number of results to return',
+			},
+			{
+				displayName: 'Directory Filter',
+				name: 'directoryFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['recent'] },
+				},
+				default: '',
+				placeholder: 'conventions/*',
+				description: 'Glob pattern to restrict which directories to scan. Leave empty to scan all.',
+			},
+			{
+				displayName: 'Tag Filter',
+				name: 'tagFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['recent'] },
+				},
+				default: '',
+				placeholder: 'n8n',
+				description: 'Only include files whose frontmatter tags contain this value. Leave empty to include all.',
+			},
+			// Vault → Backlinks fields
+			{
+				displayName: 'Target Path',
+				name: 'targetPath',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['backlinks'] },
+				},
+				default: '',
+				placeholder: 'conventions/n8n-error-format.md',
+				description: 'Path of the file to find references to, relative to the vault root. Can be a full path or just a filename.',
+			},
+			{
+				displayName: 'Directory Filter',
+				name: 'directoryFilter',
+				type: 'string',
+				displayOptions: {
+					show: { resource: ['vault'], operation: ['backlinks'] },
+				},
+				default: '',
+				placeholder: 'projects/*',
+				description: 'Glob pattern to restrict which directories to search for backlinks. Leave empty to search all.',
+			},
 		],
 	};
 
@@ -639,6 +834,355 @@ export class KeyValue implements INodeType {
 									fs.writeFileSync(counterPath, String(resetTo), 'utf-8');
 									returnData.push({ json: { counter: counterName, value: resetTo }, pairedItem: { item: i } });
 						}
+					} else if (resource === 'search') {
+					// --- Search operations ---
+					if (operation === 'query') {
+						const query = (this.getNodeParameter('query', i) as string).toLowerCase().trim();
+						const directoryFilter = this.getNodeParameter('directoryFilter', i, '') as string;
+						const tagFilter = this.getNodeParameter('tagFilter', i, '') as string;
+						const limit = this.getNodeParameter('limit', i, 10) as number;
+						const includeSnippets = this.getNodeParameter('includeSnippets', i, true) as boolean;
+
+						if (!query) continue;
+						if (!fs.existsSync(BASE_DIR)) continue;
+
+						const terms = query.split(/\s+/).filter(Boolean);
+						// Pre-compile term regexes (escape special chars for safe matching)
+						const termRegexes = terms.map((t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
+						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
+
+						const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						const results: any[] = [];
+
+						for (const dirEntry of dirEntries) {
+							if (!dirEntry.isDirectory()) continue;
+							if (dirRegex && !dirRegex.test(dirEntry.name)) continue;
+							const dirPath = path.join(BASE_DIR, dirEntry.name);
+
+							const fileEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+							for (const fileEntry of fileEntries) {
+								if (!fileEntry.isFile()) continue;
+								const filePath = path.join(dirPath, fileEntry.name);
+								const raw = fs.readFileSync(filePath, 'utf-8');
+								const { frontmatter, body } = parseFrontmatter(raw);
+
+								// Tag filter
+								if (tagFilter) {
+									const fileTags = (frontmatter?.tags as string[]) ?? [];
+									if (!fileTags.includes(tagFilter)) continue;
+								}
+
+								// Full-text AND search with scoring
+								const bodyLower = body.toLowerCase();
+								let score = 0;
+								let allMatch = true;
+								for (const regex of termRegexes) {
+									const matches = bodyLower.match(regex);
+									if (!matches) { allMatch = false; break; }
+									score += matches.length;
+								}
+								if (!allMatch) continue;
+
+								// Snippet extraction
+								let snippet: string | undefined;
+								if (includeSnippets) {
+									const firstIdx = Math.min(
+										...termRegexes.map((r) => {
+											const m = bodyLower.match(r);
+											return m?.index ?? Infinity;
+										}),
+									);
+									if (firstIdx !== Infinity && firstIdx < body.length) {
+										const start = Math.max(0, firstIdx - 60);
+										const termLen = termRegexes[0].source.length;
+										const end = Math.min(body.length, firstIdx + termLen + 60);
+										const prefix = start > 0 ? '...' : '';
+										const suffix = end < body.length ? '...' : '';
+										snippet = prefix + body.slice(start, end).replace(/\n/g, ' ') + suffix;
+									}
+								}
+
+								results.push({
+									directory: dirEntry.name,
+									key: fileEntry.name,
+									score,
+									tags: (frontmatter?.tags as string[]) ?? [],
+									...(snippet ? { snippet } : {}),
+									// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							} as any);
+							}
+						}
+
+						results.sort((a, b) => (b.score as number) - (a.score as number));
+						for (const r of results.slice(0, limit)) {
+							returnData.push({ json: r, pairedItem: { item: i } });
+						}
+					}
+				} else if (resource === 'tag') {
+					// --- Tag operations ---
+					if (operation === 'list') {
+						const directoryFilter = this.getNodeParameter('directoryFilter', i, '') as string;
+						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
+
+						const tagMap: Record<string, Set<string>> = {};
+						if (fs.existsSync(BASE_DIR)) {
+							const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+							for (const dirEntry of dirEntries) {
+								if (!dirEntry.isDirectory()) continue;
+								if (dirRegex && !dirRegex.test(dirEntry.name)) continue;
+								const dirPath = path.join(BASE_DIR, dirEntry.name);
+								const fileEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+								for (const fileEntry of fileEntries) {
+									if (!fileEntry.isFile()) continue;
+									const filePath = path.join(dirPath, fileEntry.name);
+									const raw = fs.readFileSync(filePath, 'utf-8');
+									const { frontmatter } = parseFrontmatter(raw);
+									const fileTags = (frontmatter?.tags as string[]) ?? [];
+									const fileRef = `${dirEntry.name}/${fileEntry.name}`;
+									for (const tag of fileTags) {
+										if (!tagMap[tag]) tagMap[tag] = new Set();
+										tagMap[tag].add(fileRef);
+									}
+								}
+							}
+						}
+
+						for (const [tag, files] of Object.entries(tagMap)) {
+							returnData.push({
+								json: { tag, count: files.size, files: Array.from(files).sort() },
+								pairedItem: { item: i },
+							});
+						}
+					}
+				} else if (resource === 'vault') {
+					// --- Vault operations ---
+					if (operation === 'tree') {
+						const startPath = this.getNodeParameter('path', i, '') as string;
+						const maxDepth = this.getNodeParameter('maxDepth', i, 3) as number;
+
+						const rootPath = startPath ? path.join(BASE_DIR, startPath) : BASE_DIR;
+						if (!fs.existsSync(rootPath)) continue;
+
+						const lines: string[] = [];
+						const dirs: string[] = [];
+						const files: Array<{ path: string; size: number }> = [];
+
+						const walk = (dir: string, prefix: string, depth: number): void => {
+							if (depth > maxDepth) return;
+							const entries = fs.readdirSync(dir, { withFileTypes: true });
+							const sorted = entries.sort((a, b) => a.name.localeCompare(b.name));
+							for (let j = 0; j < sorted.length; j++) {
+								const e = sorted[j];
+								const isLast = j === sorted.length - 1;
+								const connector = isLast ? '└── ' : '├── ';
+								const childPrefix = prefix + (isLast ? '    ' : '│   ');
+								const fullPath = path.join(dir, e.name);
+								const relPath = path.relative(BASE_DIR, fullPath).replace(/\\/g, '/');
+
+								if (e.isDirectory()) {
+									dirs.push(relPath);
+									if (depth < maxDepth) {
+										lines.push(`${prefix}${connector}${e.name}/`);
+										walk(fullPath, childPrefix, depth + 1);
+									} else {
+										lines.push(`${prefix}${connector}${e.name}/`);
+									}
+								} else {
+									try {
+										const stat = fs.statSync(fullPath);
+										files.push({ path: relPath, size: stat.size });
+										lines.push(`${prefix}${connector}${e.name}`);
+									} catch {
+										lines.push(`${prefix}${connector}${e.name}`);
+									}
+								}
+							}
+						}
+
+						const displayName = startPath || path.basename(BASE_DIR);
+						lines.unshift(`${displayName}/`);
+						walk(rootPath, '', 1);
+
+						returnData.push({
+							json: { tree: lines.join('\n'), directories: dirs, files },
+							pairedItem: { item: i },
+						});
+					} else if (operation === 'stats') {
+						if (!fs.existsSync(BASE_DIR)) {
+							returnData.push({ json: { files: 0, directories: 0, total_size_kb: 0, unique_tags: 0 }, pairedItem: { item: i } });
+							continue;
+						}
+
+						let fileCount = 0;
+						let dirCount = 0;
+						let totalSize = 0;
+						const allTags = new Set<string>();
+						let lastModPath = '';
+						let lastModTime = 0;
+
+						const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+						for (const dirEntry of dirEntries) {
+							if (!dirEntry.isDirectory()) continue;
+							dirCount++;
+							const dirPath = path.join(BASE_DIR, dirEntry.name);
+							const fileEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+							for (const fileEntry of fileEntries) {
+								if (!fileEntry.isFile()) continue;
+								fileCount++;
+								const filePath = path.join(dirPath, fileEntry.name);
+								try {
+									const stat = fs.statSync(filePath);
+									totalSize += stat.size;
+									if (stat.mtimeMs > lastModTime) {
+										lastModTime = stat.mtimeMs;
+										lastModPath = `${dirEntry.name}/${fileEntry.name}`;
+									}
+								} catch { /* skip */ }
+
+								// Collect tags (read file only if we need tags)
+								try {
+									const raw = fs.readFileSync(filePath, 'utf-8');
+									const { frontmatter } = parseFrontmatter(raw);
+									const tags = (frontmatter?.tags as string[]) ?? [];
+									for (const t of tags) allTags.add(t);
+								} catch { /* skip */ }
+							}
+						}
+
+						returnData.push({
+							json: {
+								files: fileCount,
+								directories: dirCount,
+								total_size_kb: Math.round((totalSize / 1024) * 10) / 10,
+								unique_tags: allTags.size,
+								last_modified: lastModPath || null,
+								last_modified_at: lastModTime ? new Date(lastModTime).toISOString() : null,
+							},
+							pairedItem: { item: i },
+						});
+					} else if (operation === 'recent') {
+						const limit = this.getNodeParameter('limit', i, 10) as number;
+						const directoryFilter = this.getNodeParameter('directoryFilter', i, '') as string;
+						const tagFilter = this.getNodeParameter('tagFilter', i, '') as string;
+						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
+
+						if (!fs.existsSync(BASE_DIR)) continue;
+
+						type RecentEntry = { directory: string; key: string; mtimeMs: number; size: number; tags: string[] };
+						const entries: RecentEntry[] = [];
+
+						const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+						for (const dirEntry of dirEntries) {
+							if (!dirEntry.isDirectory()) continue;
+							if (dirRegex && !dirRegex.test(dirEntry.name)) continue;
+							const dirPath = path.join(BASE_DIR, dirEntry.name);
+							const fileEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+							for (const fileEntry of fileEntries) {
+								if (!fileEntry.isFile()) continue;
+								const filePath = path.join(dirPath, fileEntry.name);
+								try {
+									const stat = fs.statSync(filePath);
+
+									// Tag filter
+									if (tagFilter) {
+										const raw = fs.readFileSync(filePath, 'utf-8');
+										const { frontmatter } = parseFrontmatter(raw);
+										const fileTags = (frontmatter?.tags as string[]) ?? [];
+										if (!fileTags.includes(tagFilter)) continue;
+										entries.push({
+											directory: dirEntry.name,
+											key: fileEntry.name,
+											mtimeMs: stat.mtimeMs,
+											size: stat.size,
+											tags: fileTags,
+										});
+									} else {
+										entries.push({
+											directory: dirEntry.name,
+											key: fileEntry.name,
+											mtimeMs: stat.mtimeMs,
+											size: stat.size,
+											tags: [],
+										});
+									}
+								} catch { /* skip */ }
+							}
+						}
+
+						entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
+						for (const e of entries.slice(0, limit)) {
+							returnData.push({
+								json: {
+									directory: e.directory,
+									key: e.key,
+									updated: new Date(e.mtimeMs).toISOString(),
+									size: e.size,
+									...(e.tags.length > 0 ? { tags: e.tags } : {}),
+								},
+								pairedItem: { item: i },
+							});
+						}
+					} else if (operation === 'backlinks') {
+						const targetPath = this.getNodeParameter('targetPath', i) as string;
+						const directoryFilter = this.getNodeParameter('directoryFilter', i, '') as string;
+
+						if (!fs.existsSync(BASE_DIR)) continue;
+
+						const targetName = path.basename(targetPath, '.md');
+						const dirRegex = directoryFilter ? globToRegex(directoryFilter) : null;
+
+						const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+						for (const dirEntry of dirEntries) {
+							if (!dirEntry.isDirectory()) continue;
+							if (dirRegex && !dirRegex.test(dirEntry.name)) continue;
+							const dirPath = path.join(BASE_DIR, dirEntry.name);
+							const fileEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+							for (const fileEntry of fileEntries) {
+								if (!fileEntry.isFile()) continue;
+								// Skip self-references
+								const currentRelPath = `${dirEntry.name}/${fileEntry.name}`;
+								if (currentRelPath === targetPath) continue;
+								if (fileEntry.name === path.basename(targetPath)) continue;
+
+								const filePath = path.join(dirPath, fileEntry.name);
+								const raw = fs.readFileSync(filePath, 'utf-8');
+								const { body } = parseFrontmatter(raw);
+								const bodyLower = body.toLowerCase();
+
+								// Search for references: exact path, wiki link, or bare filename
+								const patterns = [
+									targetPath,                          // full path: conventions/n8n-error-format.md
+									targetPath.replace('.md', ''),       // without extension
+									`[[${targetPath}]]`,                 // wiki link with full path
+									`[[${targetPath.replace('.md', '')}]]`, // wiki link without extension
+									`[[${targetName}]]`,                 // wiki link with just name
+								];
+
+								for (const pat of patterns) {
+									const idx = bodyLower.indexOf(pat.toLowerCase());
+									if (idx === -1) continue;
+
+									// Extract context (±40 chars around the match)
+									const start = Math.max(0, idx - 40);
+									const end = Math.min(body.length, idx + pat.length + 40);
+									const context = (start > 0 ? '...' : '') + body.slice(start, end).replace(/\n/g, ' ') + (end < body.length ? '...' : '');
+
+									returnData.push({
+										json: {
+											source_directory: dirEntry.name,
+											source_key: fileEntry.name,
+											matched_pattern: pat,
+											line: body.slice(0, idx).split('\n').length,
+											context,
+										},
+										pairedItem: { item: i },
+									});
+									break; // one reference per source file is enough
+								}
+							}
+						}
+					}
 					}
 				} catch (error) {
 				if (this.continueOnFail()) {
