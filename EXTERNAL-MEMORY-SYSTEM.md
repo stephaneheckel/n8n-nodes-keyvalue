@@ -1,7 +1,7 @@
 # External Memory System (`.n8n-keyvalue/memory/`)
 
-> Full spec for the **mémoire externe** — Hermes Agent's on-demand knowledge vault,
-> powered by `n8n-nodes-keyvalue`. Companion to **mémoire active** (built-in `memory` tool).
+> Full spec for the **external memory** — Hermes Agent's on-demand knowledge vault,
+> powered by `n8n-nodes-keyvalue`. Companion to **active memory** (built-in `memory` tool).
 
 ## Overview
 
@@ -9,10 +9,10 @@ Hermes Agent has two memory systems:
 
 | System | Storage | Size limit | When loaded |
 |--------|---------|-----------|-------------|
-| **Mémoire active** | Hermes `memory` tool | ~2,200 chars | **Every turn** (injected automatically) |
-| **Mémoire externe** | `~/.n8n-keyvalue/memory/` | **Unlimited** | **On demand** (search_files / read_file) |
+| **active memory** | Hermes `memory` tool | ~2,200 chars | **Every turn** (injected automatically) |
+| **external memory** | `~/.n8n-keyvalue/memory/` | **Unlimited** | **On demand** (search_files / read_file) |
 
-The mémoire active holds critical always-on facts. The mémoire externe stores
+The active memory holds critical always-on facts. The external memory stores
 detailed reference material — conventions, pitfalls, project context — in
 structured markdown files with YAML frontmatter.
 
@@ -110,11 +110,11 @@ Tag Filter: "project"     → only project docs
 This would mix memory files with operational data (db1, counters, etc.).
 Always scope to `~/.n8n-keyvalue/memory/`.
 
-### Relationship with mémoire active
+### Relationship with active memory
 
-- **Mémoire active** (2,200 chars): critical facts, injected every turn
-- **Mémoire externe** (`~/.n8n-keyvalue/memory/`): detailed reference, read on demand
-- Both coexist — mémoire active for always-on context, mémoire externe for depth
+- **active memory** (2,200 chars): critical facts, injected every turn
+- **external memory** (`~/.n8n-keyvalue/memory/`): detailed reference, read on demand
+- Both coexist — active memory for always-on context, external memory for depth
 
 ## n8n Workflows — Access Pattern
 
@@ -140,5 +140,5 @@ Write access to `memory/` from n8n workflows is **allowed but intentional**
 - **Flat directory**: one search call covers all memory. Tags provide taxonomy
 - **Filesystem over database**: plain `.md` files, git-friendly, tool-agnostic
 - **YAML frontmatter**: enables filtering without parsing full content
-- **Coexistence with mémoire active**: the built-in `memory` tool is not replaced —
-  it remains the always-on context, while mémoire externe provides depth on demand
+- **Coexistence with active memory**: the built-in `memory` tool is not replaced —
+  it remains the always-on context, while external memory provides depth on demand
