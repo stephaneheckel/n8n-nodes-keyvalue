@@ -60,24 +60,41 @@ updated: "2026-06-29T14:30:00Z"
 
 ## Hermes Agent — Reading Strategy
 
+All paths below are relative to `~/.n8n-keyvalue/`. Hermes resolves them to
+absolute paths when calling `search_files()` or `read_file()`.
+
+| Path | Priority | Scope |
+|------|----------|-------|
+| `~/.n8n-keyvalue/conventions/` | **P0** | Coding rules — loaded before any matching task |
+| `~/.n8n-keyvalue/pitfalls/` | **P1** | Mistakes — loaded with conventions |
+| `~/.n8n-keyvalue/projects/` | **P2** | Project context — loaded at task start |
+| `~/.n8n-keyvalue/user/` | **P3** | Preferences — already partially in `memory` |
+
 ### Default flow for a n8n task
 
 ```
-1. skill_view("n8n-node-development")           ← always
-2. search_files("n8n", path="conventions/")     ← rules to enforce
-3. search_files("n8n", path="pitfalls/")        ← mistakes to avoid
-4. read_file("projects/n8n-nodes-keyvalue.md")  ← project context
+1. skill_view("n8n-node-development")                          ← always
+2. search_files("n8n", path="~/.n8n-keyvalue/conventions/")    ← rules
+3. search_files("n8n", path="~/.n8n-keyvalue/pitfalls/")       ← pitfalls
+4. read_file("~/.n8n-keyvalue/projects/n8n-nodes-keyvalue.md") ← context
 ```
 
 ### General flow for any task
 
 ```
-1. skill_view(...)                               ← matching skill
-2. search_files("<domain>", path="conventions/") ← relevant rules
-3. search_files("<domain>", path="pitfalls/")    ← relevant pitfalls
-4. read_file("projects/<project>.md")            ← if project-specific
-5. search_files("<term>", path="user/")          ← if user preferences needed
+1. skill_view(...)                                             ← skill match
+2. search_files("<domain>", path="~/.n8n-keyvalue/conventions/")
+3. search_files("<domain>", path="~/.n8n-keyvalue/pitfalls/")
+4. read_file("~/.n8n-keyvalue/projects/<project>.md")          ← if project
+5. search_files("<term>", path="~/.n8n-keyvalue/user/")        ← if preferences
 ```
+
+### Important: never search the entire store for memory lookups
+
+Do NOT use `search_files("<term>", path="~/.n8n-keyvalue/")` for memory
+lookups — this would return results from operational data directories
+(`db1/`, `json/`, `counters/`, etc.) mixed with memory files. Always scope
+to the 4 reserved directories.
 
 ### Relationship with `memory`
 
