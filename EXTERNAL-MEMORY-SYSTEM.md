@@ -1,12 +1,20 @@
 # External Memory System (`.n8n-keyvalue/memory/`)
 
-> Full spec for the Hermes Agent external memory system powered by `n8n-nodes-keyvalue`.
+> Full spec for the **mémoire externe** — Hermes Agent's on-demand knowledge vault,
+> powered by `n8n-nodes-keyvalue`. Companion to **mémoire active** (built-in `memory` tool).
 
 ## Overview
 
-Hermes Agent has a built-in persistent memory limited to ~2,200 characters.
-To overcome this limit, an external memory system stores structured markdown
-files with YAML frontmatter in `~/.n8n-keyvalue/memory/`.
+Hermes Agent has two memory systems:
+
+| System | Storage | Size limit | When loaded |
+|--------|---------|-----------|-------------|
+| **Mémoire active** | Hermes `memory` tool | ~2,200 chars | **Every turn** (injected automatically) |
+| **Mémoire externe** | `~/.n8n-keyvalue/memory/` | **Unlimited** | **On demand** (search_files / read_file) |
+
+The mémoire active holds critical always-on facts. The mémoire externe stores
+detailed reference material — conventions, pitfalls, project context — in
+structured markdown files with YAML frontmatter.
 
 All files live in a **single flat directory** — tags in the YAML frontmatter
 provide the taxonomy, not subdirectories. This makes search trivial:
@@ -102,11 +110,11 @@ Tag Filter: "project"     → only project docs
 This would mix memory files with operational data (db1, counters, etc.).
 Always scope to `~/.n8n-keyvalue/memory/`.
 
-### Relationship with `memory`
+### Relationship with mémoire active
 
-- Hermes `memory` tool (2,200 chars): durable facts, injected every turn
-- `~/.n8n-keyvalue/memory/`: extended knowledge, read on demand
-- Both coexist — `memory` for always-on facts, files for depth
+- **Mémoire active** (2,200 chars): critical facts, injected every turn
+- **Mémoire externe** (`~/.n8n-keyvalue/memory/`): detailed reference, read on demand
+- Both coexist — mémoire active for always-on context, mémoire externe for depth
 
 ## n8n Workflows — Access Pattern
 
@@ -132,5 +140,5 @@ Write access to `memory/` from n8n workflows is **allowed but intentional**
 - **Flat directory**: one search call covers all memory. Tags provide taxonomy
 - **Filesystem over database**: plain `.md` files, git-friendly, tool-agnostic
 - **YAML frontmatter**: enables filtering without parsing full content
-- **Coexistence with `memory`**: built-in tool is not replaced — it's the
-  always-on context, while files provide depth on demand
+- **Coexistence with mémoire active**: the built-in `memory` tool is not replaced —
+  it remains the always-on context, while mémoire externe provides depth on demand
