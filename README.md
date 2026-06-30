@@ -388,7 +388,7 @@ This node powers an external memory system for [Hermes Agent](https://github.com
 | `projects/` | P2 | Per-project architectural context |
 | `user/` | P3 | User identity and preferences |
 
-Hermes can read these files via `read_file`/`search_files`, and n8n workflows can navigate them via the Search, Vault, Tag, and Record resources. Full documentation: `~/.n8n-keyvalue/conventions/external-memory-system.md`
+Hermes can read these files via `read_file`/`search_files`, and n8n workflows can navigate them via the Search, Vault, Tag, and Record resources. Full documentation: [EXTERNAL-MEMORY-SYSTEM.md](EXTERNAL-MEMORY-SYSTEM.md)
 
 ## License
 
