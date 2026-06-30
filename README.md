@@ -1,6 +1,6 @@
 # n8n-nodes-keyvalue
 
-A filesystem-based key-value store and trigger node for [n8n](https://n8n.io). Store, retrieve, list, and delete key-value pairs using plain directories and text files. Also includes a trigger node that watches directories for new or changed records.
+A filesystem-based key-value store and trigger node for [n8n](https://n8n.io). Store, retrieve, list, and delete key-value pairs using plain directories and text files. Includes full-text search, vault navigation, tag management, and YAML frontmatter metadata. Also includes a trigger node that watches directories for new or changed records.
 
 ```
 ~/.n8n-keyvalue/          ← your store root
@@ -60,20 +60,45 @@ No external dependencies — uses only Node.js built-in modules (`fs`, `path`, `
 | Operation | Fields | Description | Output |
 |-----------|--------|-------------|--------|
 | **Append** | Directory Name, Key, Value, Separator | Appends value to a record (creates if missing) | `{ "directory": "name", "key": "k", "value": "...", "appended": true }` |
-| **Count** | Directory Name, Key Filter | Counts records in a directory with optional glob filter. Does NOT read file contents — only directory metadata | `{ "directory": "name", "count": 5 }` |
-| **Delete** | Directory Name, Key Filter, Value Filter | Deletes records matching filters. Both filters optional — at least one required. Use "*" for all records | `[{ "directory": "name", "key": "k", "deleted": true }]` |
+| **Count** | Directory Name, Key Filter, Tag Filter | Counts records with optional glob and tag filters | `{ "directory": "name", "count": 5 }` |
+| **Delete** | Directory Name, Key Filter, Value Filter, Tag Filter | Deletes records matching filters. At least one filter required. Use "*" for all records | `[{ "directory": "name", "key": "k", "deleted": true }]` |
 | **Exists** | Directory Name, Key | Checks if a record exists without throwing an error | `{ "directory": "name", "key": "k", "exists": true }` |
-| **List** | Directory Name, Key Filter, Value Filter | Lists records (with optional glob + content filters) | `[{ "directory": "name", "key": "k", "value": "..." }]` |
-| **Read** | Directory Name, Key | Reads a record's value. JSON objects/arrays are auto-parsed | `{ "directory": "name", "key": "k", "value": "..." }` |
-| **Touch** | Directory Name, Key | Updates the timestamp of a record without changing its value. Creates an empty record if the key does not exist | `{ "directory": "name", "key": "k", "touched": true, "created": false }` or `{ "directory": "name", "key": "k", "touched": true, "created": true }` |
-| **Write** | Directory Name, Key, Value | Creates/overwrites a record. JSON objects/arrays are auto-detected and stored as parsed JSON | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
+| **List** | Directory Name, Key Filter, Value Filter, Tag Filter, Include Frontmatter | Lists records with optional glob, content, and tag filters | `[{ "directory": "name", "key": "k", "value": "..." }]` |
+| **Read** | Directory Name, Key, Mode | Reads a record. Mode: Full (default) / Frontmatter Only / Body Only. JSON auto-parsed | `{ "directory": "name", "key": "k", "value": "...", "frontmatter": {...}, "body": "..." }` |
+| **Touch** | Directory Name, Key | Updates mtime. Creates empty record if key does not exist | `{ "directory": "name", "key": "k", "touched": true, "created": false }` |
+| **Write** | Directory Name, Key, Value, Frontmatter (collection) | Creates/overwrites. Optional YAML frontmatter metadata | `{ "directory": "name", "key": "k", "value": "...", "written": true }` |
 
 ### List Filters
 
 - **Directory Filter** (Directory → List) — glob pattern on directory names. `*` matches any characters, `?` matches one. Example: `prod_*` matches `prod_eu`, `prod_us`.
 - **Key Filter** (Record → List, Count, Delete) — glob pattern on filename. `*` matches any characters, `?` matches one. Example: `user_*` matches `user_alice`, `user_bob`.
 - **Value Filter** (Record → List, Delete) — substring match inside file content. Example: `active` returns only records containing "active".
+- **Tag Filter** (Record → List, Count, Delete) — exact match on a frontmatter tag. Only matches records whose `tags` array contains this value. Reads file content when enabled.
 - All filters combined use AND logic. Empty = match all.
+
+### Frontmatter (YAML Metadata)
+
+Records can optionally include YAML frontmatter — structured metadata stored as `---` delimited blocks at the top of the file:
+
+```
+---
+tags: [n8n, error-handling, critical]
+description: Error format rules for n8n nodes
+updated: "2026-06-29T14:30:00Z"
+---
+Error must be at top level of INodeExecutionData.
+```
+
+**Write with frontmatter:** expand the **Frontmatter** collection on Record → Write. Fields: Tags (comma-separated), Description, Updated (ISO timestamp — auto-filled if empty).
+
+**Read modes:** Record → Read offers three modes via the **Mode** dropdown:
+- **Full** (default) — returns `value`, `frontmatter`, and `body`
+- **Frontmatter Only** — returns only `frontmatter` metadata (no content I/O for body)
+- **Body Only** — returns only `value` (backward compatible)
+
+**List with frontmatter:** enable **Include Frontmatter** to return `frontmatter` per item. Use values via `{{ $json.frontmatter.tags }}`.
+
+The `value` field is always the clean content (body), never polluted by YAML metadata. Files without frontmatter return `frontmatter: null` — fully backward compatible.
 
 ### Append Separator
 
@@ -259,6 +284,32 @@ KeyValue (Record → Write, directory: "contacts", key: "jean_copy",
 
 Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `[...]` trigger JSON mode. The Append operation always treats values as plain text.
 
+### Search Resource
+
+| Operation | Fields | Description | Output |
+|-----------|--------|-------------|--------|
+| **Query** | Query (required), Directory Filter, Tag Filter, Limit, Include Snippets | Full-text search across all files (key + body). AND logic, case-insensitive, scored | `[{ "directory": "d", "key": "k", "score": 4, "tags": [...], "snippet": "..." }]` |
+
+- **Query** — list of words, separated by spaces. All words must match (AND logic).
+- **Scoring** — number of occurrences summed across all terms. Sorted by score descending.
+- **Search scope** — both the filename (key) and content (body) are searched.
+- **Snippets** — ±60 characters of context around the first match. Shows `key: <filename>` when the match is in the key. Disable with **Include Snippets: false** for faster queries.
+
+### Vault Resource
+
+| Operation | Fields | Description | Output |
+|-----------|--------|-------------|--------|
+| **Backlinks** | Target Path (required), Directory Filter | Finds files that reference a target file (exact path, wiki link `[[...]]`, or bare filename) | `[{ "source_directory": "...", "source_key": "...", "matched_pattern": "[[...]]", "line": N, "context": "..." }]` |
+| **Recent** | Limit, Directory Filter, Tag Filter | Lists recently modified files sorted by mtime | `[{ "directory": "d", "key": "k", "updated": "ISO", "size": N }]` |
+| **Stats** | — | Aggregate vault statistics | `{ "files": N, "directories": N, "total_size_kb": N, "unique_tags": N, "last_modified": "...", "last_modified_at": "ISO" }` |
+| **Tree** | Path, Max Depth | Displays the vault directory structure as an ASCII tree | `{ "tree": "db1/\n├── file1\n└── file2", "directories": [...], "files": [...] }` |
+
+### Tag Resource
+
+| Operation | Fields | Description | Output |
+|-----------|--------|-------------|--------|
+| **List** | Directory Filter | Lists all unique tags across the vault with file counts | `[{ "tag": "n8n", "count": 12, "files": ["dir1/file1", ...] }]` |
+
 ## Data Model
 
 | n8n concept | Filesystem |
@@ -266,11 +317,15 @@ Plain text, numbers, and booleans are stored as-is (strings). Only `{...}` and `
 | Counter | Plain text file under `counters/` containing a number |
 | Directory | Subdirectory under `~/.n8n-keyvalue/` |
 | Record (key-value pair) | File whose name is the key, contents are the value |
-| Delete (filter-based) | Scans directory, applies Key Filter (glob) and/or Value Filter (substring), deletes matches. At least one filter required |
+| Delete (filter-based) | Scans directory, applies Key Filter (glob), Value Filter (substring), and/or Tag Filter (exact tag). At least one filter required |
 | Value | Plain UTF-8 text stored in the file. JSON objects/arrays ({...} / [...]) are auto-detected on Write and auto-parsed on Read |
-| Count | Lightweight tally of records in a directory — no file contents read |
+| Count | Lightweight tally of records — reads file contents only when Tag Filter is enabled |
 | Exists | `fs.existsSync` check — no file contents read, never throws |
 | Touch | Updates record mtime only — no content I/O on existing records. Creates an empty record if the key does not exist |
+| Frontmatter | YAML metadata block at the top of the file (`---` delimited). Contains `tags`, `description`, `updated`. Stripped from `value` on read. |
+| Search | Full-text scan of all files (key + body). Tokenized AND search with occurrence scoring and optional snippet extraction |
+| Vault | Cross-directory navigation: Tree (ASCII), Stats (aggregates), Recent (by mtime), Backlinks (cross-references) |
+| Tag | Index of all unique frontmatter tags with per-file counts |
 | Trigger | Polling-based watcher on a directory. Detects add/change via `mtime` comparison between scans |
 
 ## KeyValue Use Cases
