@@ -1,7 +1,6 @@
 # External Memory System (`.n8n-keyvalue/`)
 
 > Full spec for the Hermes Agent external memory system powered by `n8n-nodes-keyvalue`.
-> Also available in the store at `~/.n8n-keyvalue/conventions/external-memory-system.md`
 
 ## Overview
 
