@@ -25,7 +25,7 @@
     "lint": "n8n-node lint",
     "lint:fix": "n8n-node lint --fix",
     "release": "n8n-node release",
-    "prepublishOnly": "rm -f dist/package.json dist/tsconfig.tsbuildinfo && n8n-node prerelease"
+    "prepublishOnly": "node -e \"try{require('fs').unlinkSync('dist/package.json')}catch(e){} try{require('fs').unlinkSync('dist/tsconfig.tsbuildinfo')}catch(e){}\" && n8n-node prerelease"
   },
   "files": [
     "dist"
